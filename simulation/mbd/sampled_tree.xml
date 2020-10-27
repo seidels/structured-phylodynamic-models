@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beast version="2.0" namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood:beast.core.parameter:beast.evolution.tree.coalescent:multitypetree.operators:multitypetree.util:master.beast:master.conditions:master.model:master.postprocessors:master.outputs:master">
+
+  <run spec="InheritanceTrajectory" verbosity="1" seed="$(seed)"
+       samplePopulationSizes='True' sampleAtNodesOnly='True'>
+    
+    <model spec='Model' id='model'>
+      <!-- infected population in deme 0 and 1 -->
+	<populationType spec='PopulationType' typeName='X' dim='2'
+			id='X'/>
+	<reactionGroup spec='ReactionGroup' reactionGroupName='Birth'>
+	  <reaction spec='Reaction' rate="$(birth_rate_0)">
+	    X[0] -> 2X[0]
+	  </reaction>
+	<reaction spec='Reaction' rate="$(birth_rate_1)">
+	  X[1] -> 2X[1]
+	</reaction>
+	</reactionGroup>
+	<reactionGroup spec='ReactionGroup' reactionGroupName='Death'>
+	  <reaction spec='Reaction' rate="$(death_rate_0)">
+	    X[0] -> 0
+	  </reaction>
+	  <reaction spec='Reaction' rate="$(death_rate_1)">
+	    X[1] -> 0
+	  </reaction>
+	</reactionGroup>
+
+	<reactionGroup spec='ReactionGroup' reactionGroupName="Migration">
+	  <reaction spec='Reaction' rate="$(migration_rate_01)">
+	    X[0] -> X[1]
+	  </reaction>
+	  <reaction spec='Reaction' rate="$(migration_rate_10)">
+	    X[1] -> X[0]
+	  </reaction>
+	</reactionGroup>
+
+    </model>
+
+    <initialState spec='InitState'>
+      <lineageSeed spec='Individual'>
+	<population spec='Population' type="@X"
+		    location="$(location)"/> 
+      </lineageSeed>
+    </initialState>
+
+    <!-- Abort simulation if number of infected individuals drops to
+	 zero --> 
+    <lineageEndCondition spec='LineageEndCondition' nLineages="0"
+			 isRejection="true"> 
+      <population spec='Population' type='@X' location="0" />
+      <population spec='Population' type='@X' location="1" />
+    </lineageEndCondition> 
+
+    <!--stop simulation, once total population is reached -->
+    <lineageEndCondition spec='LineageEndCondition'
+                         nLineages="$(nLineages)"
+                         alsoGreaterThan="false"
+                         isRejection="false">
+      <population spec='Population' type='@X' location="0" />
+      <population spec='Population' type='@X' location="1" />
+    </lineageEndCondition> 
+
+
+
+     <!-- Keep only lineages, that end in a death event -->
+    <inheritancePostProcessor spec='LineageFilter'
+			       reactionName="Death" discard="false"
+			       noClean="true"/>
+
+    <!-- Reject simulation, if the leaf count for each deme is lower
+	 than 50 to enable sampling -->
+    <postSimCondition spec='LeafCountPostSimCondition'
+		      nLeaves='50'
+		      exact='false'
+		      exceedCondition='true'>
+      <population spec='Population' type='@X' location="1" />
+    </postSimCondition>
+    <postSimCondition spec='LeafCountPostSimCondition'
+		      nLeaves='50'
+		      exact='false'
+		      exceedCondition='true'>
+      <population spec='Population' type='@X' location="0" />
+    </postSimCondition>
+
+    <!-- sample 50 individuals from each population -->
+    <inheritancePostProcessor spec='LineageSampler'
+        noClean="true">
+	<populationSize spec='PopulationSize' size='50'>
+	        <population spec='Population' type='@X' location="0" />
+	</populationSize>
+	
+	<populationSize spec='PopulationSize' size='50'>
+	  <population spec='Population' type='@X' location="1" />
+	</populationSize>	
+    </inheritancePostProcessor>
+
+
+    
+    <!-- generate output files -->
+    <!--<output spec='NewickOutput' fileName='$(output_dir)/br0:$(birth_rate_0)_br1:$(birth_rate_1)_dr0:$(death_rate_0)_dr1:$(death_rate_1)_mr01:$(migration_rate_01)_mr10:$(migration_rate_10)_s:$(seed)_BDtree_wsingletons.newick'/> 
+    <output spec='NexusOutput'
+	    fileName='$(output_dir)/br0:$(birth_rate_0)_br1:$(birth_rate_1)_dr0:$(death_rate_0)_dr1:$(death_rate_1)_mr01:$(migration_rate_01)_mr10:$(migration_rate_10)_s:$(seed)_BDtreew_wsingletons.nexus'/> -->
+    <output spec='NewickOutput'
+	    fileName='$(output_dir)/br0:$(birth_rate_0)_br1:$(birth_rate_1)_dr0:$(death_rate_0)_dr1:$(death_rate_1)_mr01:$(migration_rate_01)_mr10:$(migration_rate_10)_s:$(seed)_BDtree.newick' 
+	    collapseSingleChildNodes="true"/>
+    <output spec='NexusOutput'
+	    fileName='$(output_dir)/br0:$(birth_rate_0)_br1:$(birth_rate_1)_dr0:$(death_rate_0)_dr1:$(death_rate_1)_mr01:$(migration_rate_01)_mr10:$(migration_rate_10)_s:$(seed)_BDtree.nexus'  
+	    collapseSingleChildNodes="false"/>
+    
+    <output spec='JsonOutput'
+	    fileName='$(output_dir)/br0:$(birth_rate_0)_br1:$(birth_rate_1)_dr0:$(death_rate_0)_dr1:$(death_rate_1)_mr01:$(migration_rate_01)_mr10:$(migration_rate_10)_s:$(seed)_popSize.json'
+	    />
+  </run>
+
+</beast>
