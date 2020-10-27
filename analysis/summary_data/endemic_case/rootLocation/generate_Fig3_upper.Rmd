@@ -1,0 +1,148 @@
+---
+title: "Check Root state"
+output: html_notebook
+---
+
+# Endemic Scenario
+
+```{r, necessary parameters}
+rm(list = ls())
+library(boot)
+library(ggplot2)
+library(reshape2)
+cases = c(51:53)
+picPath = "../analysis/summary_data/endemic_case/rootLocation"
+```
+
+```{r, necessary functions}
+source(file = "../../supportRootLocation.R")
+```
+
+
+```{r}
+dat = data.frame(recovery_5050= rep(NA, 6), recovery_6040= rep(NA, 6),recovery_9010= rep(NA, 6),sd_5050=rep(NA,6), sd_6040 = rep(NA, 6), sd_9010=rep(NA,6),n_5050 =rep(0, 6), n_6040 = rep(0, 6), n_9010 = rep(0, 6), Model = rep(NA, 6), case=c(rep("fast",2), rep("medium",2),rep("slow",2)))
+```
+
+```{r, prepare shared data frame}
+rowcounter = 1
+for (case in cases){
+# load true root locations
+locFile = paste0("../../../../simulation/SC/rootLocation_case", case, ".csv")
+true_root_states = read.csv(locFile, sep = ";", header = FALSE)
+colnames(true_root_states) = c("seed", "root")
+
+#load mbd and sc inference results
+load(paste0("../data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/all_params_", case, ".Rdat"))
+result_mbd = get(paste0("result_", case))
+infResults_mbd = result_mbd[[2]][which(result_mbd[[2]][,3] != 0),]
+#infResults_mbd = infResults_mbd[which(infResults_mbd$seed %in% c(2:9)),]
+
+load(paste0("../data/summary_data/sc_inf/SC/all_params_", case, ".Rdat"))
+result_sc = get(paste0("result_", case))
+infResults_sc = result_sc[[2]][which(result_sc[[2]][,3] != 0),]
+#infResults_sc = infResults_sc[which(infResults_sc$seed %in% c(2:9)),]
+  
+infResults_mbd$model = "MBD"
+infResults_sc$model = "SC"
+
+# convert root probability to type 0
+infResults_sc[, "root"] = 1 - infResults_sc[, "root"]
+colnames(infResults_sc)[25] = "root0"
+infResults_combined = rbind(infResults_mbd[,c(25, 31:32)], infResults_sc[,c(25, 34:35)])
+
+# what root type is assigned, given a minimum posterior probability
+infResults_combined$assignment_5050 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0)})
+infResults_combined$assignment_6040 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0.1)})
+infResults_combined$assignment_9010 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0.4)})
+
+# is type assignment correct?
+ infResults_combined$true_5050 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[4]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+ infResults_combined$true_6040 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[5]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+ infResults_combined$true_9010 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[6]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+
+ # compute bootstrapped mean and sd to
+ dat[rowcounter,1:9] = c(bootstrapped_mean(infResults_combined, "MBD", "true_5050"),
+                         bootstrapped_mean(infResults_combined, "MBD", "true_6040"),
+                         bootstrapped_mean(infResults_combined, "MBD", "true_9010"),
+                         bootstrapped_sd(infResults_combined, "MBD", "true_5050"),
+                         bootstrapped_sd(infResults_combined, "MBD", "true_6040"),
+                         bootstrapped_sd(infResults_combined, "MBD", "true_9010"),
+                         get_n_assignments(infResults_combined, "MBD", "true_5050"),
+                         get_n_assignments(infResults_combined, "MBD", "true_6040"),
+                         get_n_assignments(infResults_combined, "MBD", "true_9010")
+                         )
+ dat[rowcounter, 10] = "MBD"
+                          
+ rowcounter = rowcounter + 1
+ dat[rowcounter,1:9] = c(bootstrapped_mean(infResults_combined, "SC", "true_5050"),
+                         bootstrapped_mean(infResults_combined, "SC", "true_6040"),
+                         bootstrapped_mean(infResults_combined, "SC", "true_9010"),
+                         bootstrapped_sd(infResults_combined, "SC", "true_5050"),
+                         bootstrapped_sd(infResults_combined, "SC", "true_6040"),
+                         bootstrapped_sd(infResults_combined, "SC", "true_9010"),
+                         get_n_assignments(infResults_combined, "SC", "true_5050"),
+                         get_n_assignments(infResults_combined, "SC", "true_6040"),
+                         get_n_assignments(infResults_combined, "SC", "true_9010"))
+ dat[rowcounter, 10] = "SC"
+ rowcounter = rowcounter + 1
+}
+dat
+
+# build data frame
+recov_melted = melt(dat[,c(1:3, 10,11)], id.vars = c("Model", "case"), variable.name = "recoveries")
+sd_melted = melt(dat[,c(4:6, 10,11)], id.vars = c("Model", "case"), variable.name = "sd", value.name = "sd_value")
+count_melted = melt(dat[,c(7:9, 10,11)], id.vars = c("Model", "case"), variable.name = "count", value.name = "n-trees")
+
+dat_melted = cbind(recov_melted, sd_melted[, 3:4], count_melted[, 3:4])
+dat_melted$recoveries = as.character(dat_melted$recoveries)
+dat_melted[which(dat_melted$recoveries == "recovery_5050"), "recoveries"] = ">50%"
+dat_melted[which(dat_melted$recoveries == "recovery_6040"), "recoveries"] = ">60%"
+dat_melted[which(dat_melted$recoveries == "recovery_9010"), "recoveries"] = ">90%"
+
+# make count value continuous
+dat_melted$`n-trees` = as.numeric(dat_melted$`n-trees`)
+dat_end = dat_melted
+```
+
+# Plots
+
+```{r}
+p <- ggplot(data = subset(dat_melted, subset = recoveries %in% c(">50%",">90%")), aes(x = case, y = as.numeric(value), shape = Model, col= `n-trees`, fill = `n-trees`)) + 
+  #points and their shape
+  geom_point(position = position_dodge(0.4), size=2) +
+  geom_errorbar(aes(ymin=value-sd_value/2, ymax=value + sd_value/2), 
+                width=0.1, position = position_dodge(0.4), ) + 
+  scale_shape_manual(values = c(24,21)) + 
+  #add desired value
+  geom_hline(data = data.frame(yint=1.0), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+  geom_hline(data = data.frame(yint=0.5), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+
+  facet_grid(~recoveries)+
+  theme_light(base_size = 12, base_family = "Times") + 
+  ylab("Recovery of root location") + 
+  xlab("Migration cases") + ggtitle("A     ", subtitle = "                           Endemic Scenario") +
+  theme(panel.grid.minor = element_blank(), legend.position = "right") + ylim(0.3, 1.0)
+  
+tiff(filename = paste0(picPath, "/rootRecovery_", cases[1],"-", cases[3], ".tiff"), res = 300, width = 13, height = 7.5, units = "cm", compression = "none")
+p
+dev.off()
+
+pdf(file = paste0(picPath, "/rootRecovery_", cases[1],"-", cases[3],".pdf"), family = "Times", width = 13, height = 7.5 )
+print(p)
+dev.off()
+p
+```
+
+
+```{r}
+ggplot(data = infResults_combined, aes(x = as.numeric(seed), y=true_5050, group=model)) + geom_point(aes(shape=model)) + 
+  scale_shape_manual(values = c(0,3))
+
+```
+
+
+
+
