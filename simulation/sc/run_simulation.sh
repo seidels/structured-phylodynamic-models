@@ -3,7 +3,7 @@
 display_usage(){
 echo "this script takes as the parameter case. Thereupon it sources the relevant simulation parameters and generates 100 structured coalescent trees with tip times sampled uniformly at random."
 echo "run as:"
-echo "./run_xml.sh case_x"
+echo "./run_simulations.sh case_x"
 echo "Necessary packages: java, python and a BEAST jar file, e.g. http://www.beast2.org/"
 }
 
