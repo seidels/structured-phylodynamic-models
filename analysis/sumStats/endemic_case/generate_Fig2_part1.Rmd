@@ -1,0 +1,237 @@
+---
+title: "Visualise sumStats in endemic scenario"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Summary statistics
+
+```{r}
+#rm(list = ls())
+library(ggplot2)
+cases= 51:53
+bdInfDir="/Volumes/stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
+scInfDir="/Volumes/Stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/"
+picPath = "~/Projects/Comparison_BD_SC/Master_project/analysis/sumStats/endemic_case/plots/"
+dirs = c(bdInfDir, scInfDir)
+```
+
+```{r}
+BDmetrics = data.frame(Model=rep("MBD", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+SCmetrics = data.frame(Model=rep("SC", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+```
+
+```{r}
+ctr = 1
+for (casenr in cases){
+  
+  # load MBD metrics data
+  recovDat = read.csv(paste0(bdInfDir, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr10"),  
+                                                  c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(bdInfDir, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(bdInfDir, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  # load SC metrics data
+  recovDat = read.csv(paste0(scInfDir, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr01"),  
+                                                  c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(scInfDir, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(scInfDir, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  ctr = ctr + 2
+}
+metric = rbind(BDmetrics, SCmetrics)
+metric$case = as.factor(metric$case)
+```
+
+```{r}
+p <- ggplot(data = metric, aes(x=case, y = meanCov, fill=Model, col=Model)) +
+  geom_point(position = position_dodge(0.2)) +
+  facet_grid(parameter ~.) + theme_light() + 
+  geom_errorbar(aes(ymin=meanCov-sdCov, ymax=meanCov + sdCov), width=0.2, 
+                position = position_dodge(0.2)) +
+  geom_hline(yintercept = 1.0, linetype="dashed", colour="#990000", alpha=0.4)+
+  
+  xlab("migration scenarios") + 
+  ylab("Coverage")
+pdf(file = paste0(picPath, "endemic_coverageProb.pdf"))
+print(p)
+dev.off()
+p
+```
+
+```{r}
+p <- ggplot(data = metric, aes(x=case, y = meanHPD, fill=Model, col=Model)) +
+  geom_point(position = position_dodge(0.2)) +
+  facet_grid(parameter ~.) + theme_light() + 
+  geom_errorbar(aes(ymin=meanHPD-sdHPD, ymax=meanHPD + sdHPD), 
+                width=0.2, position = position_dodge(0.2)) +
+  
+    geom_hline(yintercept = 0, linetype="dashed", colour="#990000", alpha=0.6) +
+  xlab("migration scenarios") + 
+  ylab("HPD width")
+  
+pdf(file = paste0(picPath, "endemic_HPDwidth.pdf"))
+print(p)
+dev.off()
+p
+```
+
+```{r}
+p <- ggplot(data = metric, aes(x=case, y = meanRMSE, fill=Model, col=Model)) +
+  geom_point(position = position_dodge(0.2)) +
+  facet_grid(parameter ~.) + theme_light() + 
+  geom_errorbar(aes(ymin=meanRMSE-sdRMSE, ymax=meanRMSE + sdRMSE), 
+                width=0.2, position = position_dodge(0.2)) +
+  
+    geom_hline(yintercept = 0, linetype="dashed", colour="#990000", alpha=0.6) + 
+  xlab("migration scenarios") + 
+  ylab("RMSE") + 
+  labs(fill = "Model")
+
+pdf(file = paste0(picPath, "endemic_RMSE.pdf"))
+print(p)
+dev.off()
+p
+```
+
+
+### Put all plots together
+```{r}
+library(reshape2)
+meanMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("meanCov", "meanHPD", "meanRMSE"), variable.name = "metric")
+sdMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("sdCov", "sdHPD", "sdRMSE"), value.name = "sd")
+newmetric = cbind(meanMetric, sdMetric[, 4:5])
+#rename metrics 
+newmetric$metric = as.character(newmetric$metric)
+newmetric$metric[which(newmetric$metric == "meanCov")] = "Coverage"
+newmetric$metric[which(newmetric$metric == "meanHPD")] = "HPD width"
+newmetric$metric[which(newmetric$metric == "meanRMSE")] = "RMSE"
+endemicMetric = newmetric
+endemicMetric$scenario = "endemic"
+```
+
+```{r}
+p <- ggplot(data = subset(newmetric,subset = parameter == "mr10" ), aes(x=case, y = value, shape=Model))+
+                                                                        
+                                                                        #fill=Model, col=Model)) +
+
+  geom_point(position = position_dodge(0.2), size=2, fill = "grey") +
+  scale_size_manual(values = c(10,10)) + 
+  scale_shape_manual(values = c(22,24)) + 
+
+
+  facet_grid(metric ~., scales = "free_y",labeller = labeller(label_both)) + theme_light() + 
+  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
+                width=0.1, position = position_dodge(0.2))  +
+  
+  # add desired values
+  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
+  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
+  
+  theme_bw(base_family = "Times") + 
+  
+  xlab("Migration cases") + 
+  ylab("")
+  
+tiff(filename = paste0(picPath, "endemic_sumStats_mr10.tiff"), width = 1500, height = 1500, units = "px", compression = "none", family="Times", res = 300)
+print(p)
+dev.off()
+
+pdf(file = paste0(picPath, "endemic_sumStats_mr10.pdf"), family = "Times")
+print(p)
+dev.off()
+
+p
+```
+
+
+```{r}
+p <- ggplot(data = subset(newmetric,subset = parameter == "mr01" ), aes(x=case, y = value, shape=Model))+
+                                                                        
+                                                                        #fill=Model, col=Model)) +
+
+  geom_point(position = position_dodge(0.2), size=2, fill = "grey") +
+  scale_size_manual(values = c(10,10)) + 
+  scale_shape_manual(values = c(22,24)) + 
+
+  facet_grid(metric ~., scales = "free_y",labeller = labeller(label_both)) + theme_light() + 
+  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
+                width=0.1, position = position_dodge(0.2))  +
+  
+  # add desired values
+  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
+  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
+  
+  theme_bw(base_family = "Times") +
+  theme(legend.position = "top") +
+  
+  xlab("Migration cases") + 
+  ylab("")
+  
+tiff(filename = paste0(picPath, "endemic_sumStats_mr01.tiff"), width = 1150, height = 1500, units = "px", compression = "none", family="Times", res = 300)
+print(p)
+dev.off()
+
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 7, height = 8, units = "cm")
+
+p
+```
+# Performance of MBD on birth rate recovery
+
+```{r}
+BDmetrics = data.frame(Model=rep("MBD", 6), case=c(rep("slow",2), rep("medium",2), rep("fast",2)), parameter=rep(c("br0", "br1"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+ctr = 1
+for (casenr in cases){
+  
+  # load MBD metrics data
+  recovDat = read.csv(paste0(bdInfDir, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("br0", "br1"),  
+                                                  c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(bdInfDir, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("br0", "br1"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(bdInfDir, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("br0", "br1"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  ctr = ctr + 2
+}
+```
+
+```{r}
+
+```
+
