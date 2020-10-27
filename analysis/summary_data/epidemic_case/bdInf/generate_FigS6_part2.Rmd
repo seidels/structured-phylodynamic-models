@@ -1,0 +1,304 @@
+---
+title: "BD inference in epidemic case "
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r  load files}
+ rm(list = ls())
+case = 45
+load(paste0("../data/summary_data copy/bdpsi/BD_rhoSamp/all_params_", case, ".Rdat"))
+result = get(paste0("result_", case))
+simParams = result[[1]]
+infResults = result[[2]][which(result[[2]][,3] != 0),]
+picPath = "../analysis/summary_data/epidemic_case/bdInf/"
+```
+
+```{r}
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(viridis)
+library(ggsci)
+library(latex2exp)
+library(RColorBrewer)
+
+```
+
+
+# Look at the inferred migration rates
+
+```{r}
+true = as.numeric(simParams["1", "mr01"])
+
+m_melted  = melt(infResults[,c(7,10,31)], id.vars="seed" )
+m_upper_melted = melt(infResults[,c(9,12,31)], id.vars="seed" )
+m_lower_melted = melt(infResults[,c(8,11,31)], id.vars="seed" )
+colnames(m_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(m_lower_melted) <- c("seed", "var_lower", "val_lower")
+
+mdat = cbind(m_melted, m_lower_melted[, c(2,3)], m_upper_melted[, c(2,3)])
+
+```
+
+```{r}
+# order by mr01
+subdat = mdat[which(mdat$variable == "mr01"), ]
+subdat = subdat[order(subdat$value), ]
+subdat$orderedSeed = 1:nrow(subdat)
+
+mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
+mdat$orderedSeed = -1
+for (i in 1:length(mdat$orderedSeed)){
+  mdat[i, "orderedSeed"] = mapping[which(mapping$seed == mdat[i, "seed"]), "ind"]
+}
+mdat = mdat[order(mdat$orderedSeed),]
+```
+
+```{r}
+# add prior
+library(HDInterval)
+set.seed(1)
+oneOnX_sample_generator <- function(n=1, lbound, ubound){
+  
+  unif = runif(n = n,min = log(lbound), max = log(ubound) )
+  oneOnXsample = exp(unif)
+
+  # oneOnXsample = -1
+  # # bound 1/x between [10e-3, 10e3]
+  # while (oneOnXsample > 1000 | oneOnXsample < 0.001){
+  #   # generate sample from unif distr
+  #   unif_sample =runif(1)
+  #   # transform to X ~ 1/X
+  #   oneOnXsample = ubound**unif_sample * lbound**(1 - unif_sample)
+  # }
+
+ return(oneOnXsample)
+}
+# generate samples from the prior
+q01_samples = rexp(n = 100000, rate = 1)  # backward migration 
+N0_samples = oneOnX_sample_generator(lbound = 0.01, ubound = 100, n = 100000)
+N1_samples = oneOnX_sample_generator(lbound = 0.01, ubound = 100, n = 100000)
+N0_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n = 100000)
+N1_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n = 100000)
+mr10_samples = q01_samples * N0_samples /N1_samples # forward migration
+
+# prior on mr01 in SC analysis
+med_sc = as.numeric(median(mr10_samples, na.rm = TRUE))
+lower_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[1]])
+upper_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[2]])
+
+# prior on mr01 in MBD analysis (is Exp(1), which is what the q01 samples are drawn from)
+med_bd  = as.numeric(median(q01_samples, na.rm = TRUE))
+lower_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[1]])
+upper_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[2]])
+
+mdat$variable = as.character(mdat$variable)
+mdat[nrow(mdat) + 1, ] = c(105, "mr10_prior", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, 105)
+
+mdat$value = as.numeric(mdat$value)
+mdat$orderedSeed = as.numeric(mdat$orderedSeed)
+```
+
+```{r, find root assoc to seed}
+infResults = infResults[order(infResults$seed),]
+l = as.numeric(sapply(unique(mdat$seed), function(x){
+  infResults[which(infResults$seed == x), "root0"] <=0.5
+}))
+l
+```
+
+```{r}
+p<- ggplot(mdat, aes(x=orderedSeed, y=log(value), col = variable)) + 
+  #geom_point() +
+  geom_pointrange(aes(ymin=log(as.numeric(val_lower)), ymax=log(as.numeric(val_upper))), shape=21, fatten = -0.75, size = 0.6, alpha = 0.5) +
+  geom_hline(yintercept = as.numeric(log(as.numeric(simParams[, "mr10"]))), size = 0.2) +
+  theme_bw(base_family = "Times", base_size = 8) +
+  ylab("Log migration rate") + 
+  scale_color_manual(values = brewer.pal(n = 2, "Set1"), labels = unname(TeX(c("$m_{rb}", "$m_{br}", "prior")))) + 
+  xlab("Simulation Number")+
+theme(panel.grid = element_blank(), legend.position = c(0.36, 0.13), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"), legend.text = element_text(family = "Times", size = 6))+  guides(col = guide_legend(nrow = 1, override.aes = list(size = 0.1)), fill = FALSE)
+
+tiff(filename = paste0(picPath, "case", case,"_migRates.tiff"), width = 6.5, height = 5, units = "cm", compression = "none", family="Times", res = 300)
+print(p)
+dev.off()
+
+ggsave(filename = paste0(picPath, "case",case,"_migRates.pdf"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+p
+```
+
+
+```{r}
+cor.test(infResults$mr01, infResults$mr10, method = "kendall")
+```
+
+
+# Look at the inferred birth rates
+
+#Look at the inferred birth rates
+
+```{r}
+b_melted  = melt(infResults[,c(1,4,31)], id.vars="seed" )
+b_upper_melted = melt(infResults[,c(3,6,31)], id.vars="seed" )
+b_lower_melted = melt(infResults[,c(2,5,31)], id.vars="seed" )
+colnames(b_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(b_lower_melted) <- c("seed", "var_lower", "val_lower")
+
+bdat = cbind(b_melted, b_lower_melted[, c(2,3)], b_upper_melted[, c(2,3)])
+```
+
+
+
+```{r}
+bdat$orderedSeed = -1
+for (i in 1:length(bdat$orderedSeed)){
+  bdat[i, "orderedSeed"] = mapping[which(mapping$seed == bdat[i, "seed"]), "ind"]
+}
+bdat = bdat[order(bdat$orderedSeed),]
+```
+
+```{r}
+p<- ggplot(bdat, aes(x=orderedSeed, y=log(value), col = variable)) + 
+  #geom_point() +
+   geom_pointrange(aes(ymin=log(as.numeric(val_lower)), 
+                         ymax=log(as.numeric(val_upper))), shape=21, fatten = -0.75, 
+                   size = 0.6, alpha = 0.5) +
+  geom_hline(yintercept = as.numeric(log(as.numeric(simParams[, "br0"]))), size = 0.2) +
+  theme_bw(base_family = "Times", base_size = 8) +
+  ylab("Log birth rate") + 
+  scale_color_manual(values = brewer.pal(n = 2, "Set1"), labels = unname(TeX(c("$ß_{r}", "$ß_{b}")))) + 
+  xlab("Simulation Number")+
+  theme(panel.grid = element_blank(), legend.position = c(0.78, 0.11), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"), legend.text = element_text(family = "Times", size = 6))+  guides(col = guide_legend(nrow = 1, override.aes = list(size = 0.1)), fill = FALSE)
+
+tiff(filename = paste0(picPath, "case", case,"_birthRates.tiff"), width = 6.5, height = 5, units = "cm", compression = "none", family="Times", res = 300)
+print(p)
+dev.off()
+
+ggsave(filename = paste0(picPath, "case",case,"_birthRates.pdf"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+
+p
+```
+
+```{r}
+p <- ggplot(infResults, aes(x=log(br0), y = log(br1))) + geom_point(size= 0.3) + geom_vline(xintercept = log(1.5)) + geom_hline(yintercept = log(1.5))
+ggsave(filename = paste0(picPath, "case",case,"_birthratexy.tiff"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+p
+```
+
+
+```{r}
+ggplot(mdat, aes(x=seed, y=value/true, col = variable)) + geom_point() + geom_errorbar(aes(ymin=val_lower/true, ymax=val_upper/true)) + geom_hline(yintercept = true) + ylab("normalized migration rate HPD & median") #+ylim(0,0.5) + geom_hline(yintercept = 0.01)
+```
+
+
+
+
+# Old plots
+
+
+```{r}
+tm = as.numeric(simParams["1", "mr01"])
+p <- ggplot(infResults, aes(x=log(mr01), y=log(mr10))) + geom_point(size = 0.3)+ geom_hline(yintercept = log(tm), col="black") + geom_vline(xintercept = log(tm), col="black") + ylim(-6,5)
+ggsave(filename = paste0(picPath, "case",case,"_migratexy.tiff"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+p
+```
+correlated migration rates
+
+
+# Plot migration and birth rates together
+
+```{r}
+ggplot(infResults, aes(x=mr01, y=br0, col = br1)) + geom_point() +  geom_hline(yintercept = 1.5) + geom_vline(xintercept = as.numeric(simParams["1", "mr01"]))#scale_color_gradient(low = "blue", high = "red") + geom_c #viridis(10)[5])
+
+```
+
+negative correlation between birth rate and migration rate medians.
+
+
+
+
+
+# Look at sampling proportions
+```{r}
+sp_melted  = melt(infResults[,c(13,16,31)], id.vars="seed" )
+sp_upper_melted = melt(infResults[,c(15,18,31)], id.vars="seed" )
+sp_lower_melted = melt(infResults[,c(14,17,31)], id.vars="seed" )
+colnames(sp_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(sp_lower_melted) <- c("seed", "var_lower", "val_lower")
+
+spDat = cbind(sp_melted, sp_lower_melted[, c(2,3)], sp_upper_melted[, c(2,3)])
+ggplot(spDat, aes(x=seed, y=value, col = variable)) + geom_point() + geom_errorbar(aes(ymin=val_lower, ymax=val_upper)) 
+```
+
+Plot sampling proportions against each other
+
+```{r}
+ggplot(infResults, aes(x=sp0, y=sp1)) + geom_point(col = viridis(10)[6])
+```
+
+```{r}
+ggplot(infResults, aes(x=mr01, y=sp0, col = br1)) + geom_point() + geom_vline(xintercept = as.numeric(simParams["1", "mr01"]))#scale_color_gradient(low = "blue", high = "red") + geom_c #viridis(10)[5])
+
+```
+
+# Check correlation with tree height
+
+```{r}
+treeHeightFile = "/Volumes/stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/simulated_trees/BD_rhoSamp/case_45/values/treeheights.csv"
+treeHeights = read.csv(file = treeHeightFile, sep = ";", header = FALSE, col.names = c("seed", "height"))
+infResults = infResults[order(infResults$seed), ]
+infResults$treeHeight = treeHeights$height
+```
+
+```{r}
+popsizeFile = "/Volumes/stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/simulated_trees/BD_rhoSamp/case_45/values/populationSizes.csv"
+popsizes = read.csv(file = popsizeFile, sep = ";", header = TRUE)
+infResults$popSizeDiff =  popsizes$popSize_0 - popsizes$popSize_1
+infResults$popSize_0 = popsizes$popSize_0
+```
+
+
+```{r}
+sampPropFile = "/Volumes/stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/simulated_trees/BD_rhoSamp/case_45/values/samplingProportions.csv"
+sampProp = read.csv(file = sampPropFile, sep = ";", header = TRUE)
+infResults$trueSampProp_0 =  sampProp$samplingProportion_0
+infResults$trueSampProp_1 = sampProp$samplingProportion_1
+```
+
+
+```{r}
+ggplot(infResults, aes(x=sp0, y=trueSampProp_0)) + geom_point() + geom_abline(intercept = 0, slope = 1)
+```
+
+```{r}
+ggplot(infResults, aes(x=sp1, y=popSizeDiff)) + geom_point() 
+```
+
+```{r}
+spDat = spDat[order(spDat$seed), ]
+spDat$truth = -1 
+
+for (irow in 1:nrow(spDat)){
+  
+  seed = spDat[irow, "seed"]
+  vari = spDat[irow, "variable"]
+  
+  if (vari == "sp0"){
+    spDat[irow, "truth"] = sampProp[seed, "samplingProportion_0"]
+  }else{
+      spDat[irow, "truth"] = sampProp[seed, "samplingProportion_1"]
+
+  }
+}
+```
+
+
+```{r}
+ggplot(subset(spDat, subset = variable %in% "sp0"), aes(x=seed, y=value, col = variable)) + geom_point() +  geom_errorbar(aes(ymin=val_lower, ymax=val_upper)) + geom_point(aes(y=truth),  color = "black")
+```
+```{r}
+ggplot(subset(spDat, subset = variable %in% "sp1"), aes(x=seed, y=value, col = variable)) + geom_point() +  geom_errorbar(aes(ymin=val_lower, ymax=val_upper)) + geom_point(aes(y=truth),  color = "black")
+```
