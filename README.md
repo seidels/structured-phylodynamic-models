@@ -1,2 +1,2 @@
 # structured-phylodynamic-models
-Code to reproduce the results of the paper "Quantitative Comparison of pylodynamic models for structured populations"
+Code to reproduce the results of the paper "Quantitative comparison of pylodynamic models for structured populations"
