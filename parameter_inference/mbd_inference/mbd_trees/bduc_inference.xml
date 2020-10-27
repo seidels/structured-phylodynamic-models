@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:feast.fileio:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood:multitypetree.operators:multitypetree.util" required="BEAST v2.5.0:BDMM v0.3.1:MultiTypeTree v7.0.0" version="2.5">
+ 
+  
+<taxa id="taxa1" spec="TaxonSet">
+  <plate var="n" 
+	 range="1:100"
+	 >
+    <taxon id="$(n)" spec="Taxon"/>
+  </plate>
+<!-- <taxon id="1" spec="Taxon"></taxon>
+    <taxon id="2" spec="Taxon"></taxon>
+    <taxon id="3" spec="Taxon"></taxon>
+    <taxon id="4" spec="Taxon"></taxon>
+    <taxon id="5" spec="Taxon"></taxon>
+    <taxon id="6" spec="Taxon"></taxon>
+    <taxon id="7" spec="Taxon"></taxon>
+    <taxon id="8" spec="Taxon"></taxon>
+    <taxon id="9" spec="Taxon"></taxon>
+    <taxon id="10" spec="Taxon"></taxon>
+    <taxon id="11" spec="Taxon"></taxon>
+    <taxon id="12" spec="Taxon"></taxon>
+    <taxon id="13" spec="Taxon"></taxon>
+    <taxon id="14" spec="Taxon"></taxon>
+    <taxon id="15" spec="Taxon"></taxon>
+    <taxon id="16" spec="Taxon"></taxon>
+    <taxon id="17" spec="Taxon"></taxon>
+    <taxon id="18" spec="Taxon"></taxon>
+    <taxon id="19" spec="Taxon"></taxon>
+    <taxon id="20" spec="Taxon"></taxon>
+    <taxon id="21" spec="Taxon"></taxon>
+    <taxon id="22" spec="Taxon"></taxon>
+    <taxon id="23" spec="Taxon"></taxon>
+    <taxon id="24" spec="Taxon"></taxon>
+    <taxon id="25" spec="Taxon"></taxon>
+    <taxon id="26" spec="Taxon"></taxon>
+    <taxon id="27" spec="Taxon"></taxon>
+    <taxon id="28" spec="Taxon"></taxon>
+    <taxon id="29" spec="Taxon"></taxon>
+    <taxon id="30" spec="Taxon"></taxon>
+    <taxon id="31" spec="Taxon"></taxon>
+    <taxon id="32" spec="Taxon"></taxon>
+    <taxon id="33" spec="Taxon"></taxon>
+    <taxon id="34" spec="Taxon"></taxon>
+    <taxon id="35" spec="Taxon"></taxon>
+    <taxon id="36" spec="Taxon"></taxon>
+    <taxon id="37" spec="Taxon"></taxon>
+    <taxon id="38" spec="Taxon"></taxon>
+    <taxon id="39" spec="Taxon"></taxon>
+    <taxon id="40" spec="Taxon"></taxon>
+    <taxon id="41" spec="Taxon"></taxon>
+    <taxon id="42" spec="Taxon"></taxon>
+    <taxon id="43" spec="Taxon"></taxon>
+    <taxon id="44" spec="Taxon"></taxon>
+    <taxon id="45" spec="Taxon"></taxon>
+    <taxon id="46" spec="Taxon"></taxon>
+    <taxon id="47" spec="Taxon"></taxon>
+    <taxon id="48" spec="Taxon"></taxon>
+    <taxon id="49" spec="Taxon"></taxon>
+    <taxon id="50" spec="Taxon"></taxon>
+    <taxon id="51" spec="Taxon"></taxon>
+    <taxon id="52" spec="Taxon"></taxon>
+    <taxon id="53" spec="Taxon"></taxon>
+    <taxon id="54" spec="Taxon"></taxon>
+    <taxon id="55" spec="Taxon"></taxon>
+    <taxon id="56" spec="Taxon"></taxon>
+    <taxon id="57" spec="Taxon"></taxon>
+    <taxon id="58" spec="Taxon"></taxon>
+    <taxon id="59" spec="Taxon"></taxon>
+    <taxon id="60" spec="Taxon"></taxon>
+    <taxon id="61" spec="Taxon"></taxon>
+    <taxon id="62" spec="Taxon"></taxon>
+    <taxon id="63" spec="Taxon"></taxon>
+    <taxon id="64" spec="Taxon"></taxon>
+    <taxon id="65" spec="Taxon"></taxon>
+    <taxon id="66" spec="Taxon"></taxon>
+    <taxon id="67" spec="Taxon"></taxon>
+    <taxon id="68" spec="Taxon"></taxon>
+    <taxon id="69" spec="Taxon"></taxon>
+    <taxon id="70" spec="Taxon"></taxon>
+    <taxon id="71" spec="Taxon"></taxon>
+    <taxon id="72" spec="Taxon"></taxon>
+    <taxon id="73" spec="Taxon"></taxon>
+    <taxon id="74" spec="Taxon"></taxon>
+    <taxon id="75" spec="Taxon"></taxon>
+    <taxon id="76" spec="Taxon"></taxon>
+    <taxon id="77" spec="Taxon"></taxon>
+    <taxon id="78" spec="Taxon"></taxon>
+    <taxon id="79" spec="Taxon"></taxon>
+    <taxon id="80" spec="Taxon"></taxon>
+    <taxon id="81" spec="Taxon"></taxon>
+    <taxon id="82" spec="Taxon"></taxon>
+    <taxon id="83" spec="Taxon"></taxon>
+    <taxon id="84" spec="Taxon"></taxon>
+    <taxon id="85" spec="Taxon"></taxon>
+    <taxon id="86" spec="Taxon"></taxon>
+    <taxon id="87" spec="Taxon"></taxon>
+    <taxon id="88" spec="Taxon"></taxon>
+    <taxon id="89" spec="Taxon"></taxon>
+    <taxon id="90" spec="Taxon"></taxon> -->
+
+
+
+
+
+</taxa>
+
+
+  <!-- specify tip types/locations -->
+  <typeTrait id="typeTraitSet"
+		spec="beast.evolution.tree.TraitSet"
+		traitname="type"
+value="16=0,37=0,97=0,31=0,62=1,52=0,86=1,70=1,63=1,89=1,64=1,17=0,33=0,91=0,39=0,76=0,78=0,57=0,79=0,98=0,11=0,18=0,53=0,73=0,35=0,60=0,7=1,3=1,93=0,58=0,4=1,27=1,90=1,61=1,66=1,22=1,21=1,38=0,14=0,99=0,20=0,96=0,88=1,8=1,24=1,42=1,85=1,48=1,6=1,26=1,54=0,40=0,80=0,94=0,74=0,75=0,12=0,29=1,49=1,84=1,9=1,43=1,65=1,56=0,19=0,50=1,82=1,69=1,2=1,25=1,83=1,13=0,36=0,45=1,47=1,10=1,23=1,67=1,34=0,87=1,30=1,71=0,100=0,72=0,92=0,32=0,55=0,59=0,15=0,77=0,51=0,95=0,28=1,1=1,44=1,5=1,81=1,41=1,68=1,46=1">
+    <taxa idref="taxa1" />
+  </typeTrait>
+  
+  <!-- specify tip times -->
+  <traitSet id="timeTraitSet"
+	 spec="beast.evolution.tree.TraitSet"
+	 taxa="@taxa1" traitname="date-forward" >
+16=0.0,37=0.2,97=0.8,31=0.2,62=0.6,52=0.4,86=0.8,70=0.6,63=0.6,89=0.8,64=0.6,17=0.0,33=0.2,91=0.8,39=0.2,76=0.6,78=0.6,57=0.4,79=0.6,98=0.8,11=0.0,18=0.0,53=0.4,73=0.6,35=0.2,60=0.4,7=0.0,3=0.0,93=0.8,58=0.4,4=0.0,27=0.2,90=0.8,61=0.6,66=0.6,22=0.2,21=0.2,38=0.2,14=0.0,99=0.8,20=0.0,96=0.8,88=0.8,8=0.0,24=0.2,42=0.4,85=0.8,48=0.4,6=0.0,26=0.2,54=0.4,40=0.2,80=0.6,94=0.8,74=0.6,75=0.6,12=0.0,29=0.2,49=0.4,84=0.8,9=0.0,43=0.4,65=0.6,56=0.4,19=0.0,50=0.4,82=0.8,69=0.6,2=0.0,25=0.2,83=0.8,13=0.0,36=0.2,45=0.4,47=0.4,10=0.0,23=0.2,67=0.6,34=0.2,87=0.8,30=0.2,71=0.6,100=0.8,72=0.6,92=0.8,32=0.2,55=0.4,59=0.4,15=0.0,77=0.6,51=0.4,95=0.8,28=0.2,1=0.0,44=0.4,5=0.0,81=0.8,41=0.4,68=0.6,46=0.4
+  </traitSet>
+
+
+
+<!-- specify migration model -->
+<migrationModel id="migModel.t" spec="beast.evolution.tree.SCMigrationModel">
+  <parameter dimension="2" estimate="false" name="rateMatrix">1.0 1.0</parameter>
+  <parameter estimate="false" name="rateMatrixScaleFactor">1.0</parameter>
+  <parameter dimension="2" estimate="false" name="popSizes">100.0 100.0</parameter>
+  <parameter estimate="false" name="popSizesScaleFactor">1.0</parameter>
+  <typeSet id="typeSet" spec="beast.evolution.tree.TypeSet" typeTraitSet="@typeTraitSet"/>		    
+</migrationModel>
+
+
+<!-- syntactic sugar -->
+<map name="Uniform" >beast.math.distributions.Uniform</map>
+<map name="Exponential" >beast.math.distributions.Exponential</map>
+<map name="LogNormal" >beast.math.distributions.LogNormalDistributionModel</map>
+<map name="Normal" >beast.math.distributions.Normal</map>
+<map name="Beta" >beast.math.distributions.Beta</map>
+<map name="Gamma" >beast.math.distributions.Gamma</map>
+<map name="LaplaceDistribution" >beast.math.distributions.LaplaceDistribution</map>
+<map name="prior" >beast.math.distributions.Prior</map>
+<map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
+<map name="OneOnX" >beast.math.distributions.OneOnX</map>
+
+<!-- calculate sampling proportion -->
+<RPNcalculator spec="beast.math.statistic.RPNcalculator"
+	       id="samplingProportion_"
+               expression="samplingRate_ samplingRate_ 1 + /"
+               > <!-- sr/ (sr + dr ) -->
+  <parameter idref="samplingRate_"/>
+</RPNcalculator>
+
+
+<!--                  run inference element                 -->
+<run id="mcmc" spec="MCMC" chainLength="1000000000">  
+    
+  <state id="state" storeEvery="5000">      <!-- load starting tree from tree simulation file and do fixed
+	   inference, e.g. change only the colors and time points when
+	   colors change on the tree -->
+            <stateNode id="inputTree"
+		 spec="beast.evolution.tree.MultiTypeTreeFromUntypedNewick"
+		 adjustTipHeights="false" 
+		 
+		 > 
+	      <migrationModel idref="migModel.t" />
+	      <typeTrait idref="typeTraitSet" />
+	      <typeSet idref="typeSet" />
+	      <trait idref="timeTraitSet" />
+	      <taxonset idref="taxa1" />
+	    </stateNode>
+
+        <parameter id="birthRate_" dimension="2" lower="0.0" 
+		   name="stateNode" upper="20"
+		   value="1.0 1.0"/>
+        <parameter id="deathRate_" dimension="2" lower="1.0"
+		   name="stateNode" upper="1.0"
+		   value="1.0 1.0"/>
+        <parameter id="samplingRate_" dimension="2" lower="0.0"
+		   name="stateNode" upper="100"
+		   value="0.1 0.1" />
+<!-- this is 2D because the diagonal entries are omitted -->
+        <parameter id="rateMatrix_" dimension="2" lower="0.0"
+		   name="stateNode" upper="100.0"
+		   value="0.5 0.5" />
+        <parameter id="type-frequencies_" dimension="2" lower="0.0"
+		   name="stateNode" upper="1.0" value="0.5 0.5"/>
+        <parameter id="clockRate.c:alignment"
+		   name="stateNode">1.0</parameter>
+        <parameter id="origin" lower="0.0" name="stateNode"
+		   upper="Infinity">5</parameter>
+
+      </state>
+
+      <!--                specify distribution            -->
+    <distribution id="posterior" spec="util.CompoundDistribution">
+
+        <distribution id="prior" spec="util.CompoundDistribution">
+            <distribution id="birthDeathMigration.t:alignment"
+			  spec="beast.evolution.speciation.BirthDeathMigrationModelUncoloured" 
+			  conditionOnSurvival="true"
+			  birthRate="@birthRate_"
+			  deathRate="@deathRate_" checkRho="false"
+			  frequencies="@type-frequencies_"
+			  migrationMatrix="@rateMatrix_"
+			  samplingRate="@samplingRate_"
+			  stateNumber="2" tree="@inputTree"
+			  tiptypes="@typeTraitSet">
+	    <!--1) birth  2) death  3) sampling  4) rho  5) r  6)
+		migration -->  
+	     <!--parameter id="samplingRateChangeTimes.s:h3n2_2deme"
+			spec="parameter.RealParameter" dimension="2"
+			name="samplingRateChangeTimes">0.0 sRateChangeT</parameter-->
+	    <reverseTimeArrays id="BooleanParameter.0"
+			       spec="parameter.BooleanParameter"
+			       dimension="6"> 
+	      false false false false false false 
+	    </reverseTimeArrays>
+            </distribution>
+
+
+	    <!--                  priors                          -->
+	    <!-- prior on birth rate -->
+            <prior id="br_prior" name="distribution" x="@birthRate_">
+                <LogNormal id="LogNormalDistributionModel.1"
+			   name="distr">
+		  <!-- parametrized by mean and standard deviation -->
+                    <parameter id="RealParameter.7" estimate="false"
+			       name="M">0.25</parameter> 
+                    <parameter id="RealParameter.8" estimate="false"
+			       name="S">0.5</parameter> 
+                </LogNormal> 
+            </prior>
+	    <!-- prior on death rate -->
+            <prior id="dr_prior" name="distribution" x="@deathRate_">
+                <LogNormal id="LogNormalDistributionModel.2"
+			   name="distr"> 
+                    <parameter id="RealParameter.5" estimate="false"
+			       name="M">0.0</parameter> 
+                    <parameter id="RealParameter.6" estimate="false"
+			       name="S">1.0</parameter> 
+                </LogNormal>
+            </prior>
+	    <!-- prior on clockrate -->
+            <prior id="ClockPrior.c:alignment" name="distribution" x="@clockRate.c:alignment">
+                <Uniform id="Uniform.0" name="distr"
+			 upper="Infinity"/> 
+            </prior> 
+	    <!-- prior on migration rate --> 
+            <prior id="rm_prior" name="distribution" x="@rateMatrix_"> 
+                <Exponential name="distr" mean="1.0"/>
+            </prior>
+	    <!-- prior on sampling proportion -->   
+	    <prior id="sr_prior" name="distribution"
+		   x="@samplingProportion_">
+	      <Uniform name="distr" lower="0" upper="1"/>
+	    </prior>	    
+	    <prior id="originPrior" name="distribution" x="@origin">
+              <LogNormal id="LogNormalDistributionModel.03"
+			 name="distr">
+                  <parameter estimate="false" name="M">-1</parameter>
+                  <parameter estimate="false" lower="0.0" name="S"
+			     upper="5.0">1.0</parameter>
+              </LogNormal>
+            </prior>
+
+        </distribution>
+    </distribution>
+
+
+    <!--                operators; tree operators removed        -->
+    <operator id="nodeRecolour" spec="NodeRetype" multiTypeTree="@inputTree" 
+	      migrationModel="@migModel.t" weight="3.0" />    
+    <!--scalers: -->
+    <operator id="treeScaler" scaleFactor="0.75" spec="ScaleOperator"
+	      tree="@inputTree" weight="0.0"/>
+
+    <operator id="br_Scaler" spec="ScaleOperator" parameter="@birthRate_" scaleFactor="0.8" weight="3.0"/>
+
+    <operator id="sr_Scaler" spec="ScaleOperator"
+	      parameter="@samplingRate_" scaleFactor="0.9"
+	      weight="3.0"/>
+
+    <operator id="rm_Scaler" spec="ScaleOperator"
+	      parameter="@rateMatrix_" scaleFactor="0.8"
+	      weight="3.0"/>
+
+    <operator id="type-frequenciesExchange"
+	      spec="DeltaExchangeOperator" delta="0.1" weight="0.1">
+        <parameter idref="type-frequencies_"/>
+    </operator>
+    <operator id="origScaler" spec="ScaleOperator" parameter="@origin"
+	      scaleFactor="0.75" weight="1.0"/>
+
+
+    <!-- upDown -->
+    <operator id="updownBD.t:alignment" spec="UpDownOperator"
+	  scaleFactor="0.9" weight="3.0"> 
+        <up idref="rateMatrix_"/>
+        <down idref="samplingRate_"/>
+    </operator>
+
+    <operator id="updownBM.t:alignment" spec="UpDownOperator" scaleFactor="0.9" weight="3.0">
+        <up idref="birthRate_"/>
+        <down idref="rateMatrix_"/>
+    </operator>
+
+    <operator id="updownDS.t:alignment" spec="UpDownOperator" scaleFactor="0.9" weight="3.0">
+        <up idref="samplingRate_"/>
+        <down idref="birthRate_"/>
+    </operator>
+
+    <!-- swappers -->
+    <operator id="rateSwapper" spec="RateSwapper" weight="3.0">
+            <rate idref="birthRate_" />
+            <rate idref="rateMatrix_" />
+            <rate idref="samplingRate_" />
+	    <rate idref="type-frequencies_" />
+    </operator>
+
+    <operator id="birthRateSwapper" spec="SwapOperator" weight="3.0">
+      <parameter idref="birthRate_" />
+      </operator>
+
+    <operator id="migrationRateSwapper" spec="SwapOperator" weight="3.0">
+      <parameter idref="rateMatrix_" />
+      </operator>
+
+    <operator id="samplingRateSwapper" spec="SwapOperator" weight="3.0">
+      <parameter idref="samplingRate_" />
+      </operator>
+
+    <operator id="typeFreqSwapper" spec="SwapOperator" weight="3.0">
+      <parameter idref="type-frequencies_" />
+      </operator>
+	
+    <!--loggers-->
+    <logger id="tracelog" fileName="$(filebase).log" logEvery="10000">
+        <log idref="posterior"/>
+        <log idref="birthDeathMigration.t:alignment"/>
+        <log idref="prior"/>
+        <log idref="birthRate_"/>
+        <log idref="deathRate_"/>
+        <log idref="samplingRate_"/>
+	<log idref="samplingProportion_"/>
+        <log idref="rateMatrix_"/>
+	<log idref="origin"/>
+        <log idref="type-frequencies_"/>
+	<log spec="bdmm.loggers.RootProbLogger" bdmmuc="@birthDeathMigration.t:alignment"/>
+    </logger>
+
+    <logger id="screenlog" logEvery="10000">
+        <log idref="posterior"/>
+        <log id="ESS.0" spec="util.ESS" arg="@posterior"/>
+        <!--log idref="likelihood"/-->
+        <log idref="prior"/>
+    </logger>
+
+
+</run>
+
+</beast>
