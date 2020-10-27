@@ -3,14 +3,14 @@
 Primary parameters of interest: migration rates and root location
 
 
-## Inference under the MBD model => mbd_inference
+## Scripts for inference under the MBD model => mbd_inference
 
 ### From epidemic trees ==> mbd_trees
 
 ### From endemic trees ==> sc_trees
 
 
-## Inference under the SC model => sc_inference
+## Scripts for inference under the SC model => sc_inference
 ###From epidemic trees ==> mbd_trees
 
 ###From endemic trees ==> sc_trees
