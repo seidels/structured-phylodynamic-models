@@ -1,0 +1,15 @@
+Here is all the code for analysis of the inference output. The categories are listed in the order, in which they are used. Generally, the directory names the input to the code
+
+Categories:
+
+- logfile
+  contains all the code that generates a summary table from the raw BEAST logs. This summary table is contained in this repository under the root as summary_data.zip
+  
+- summary_data
+  contains the code to generate the summary statistics (Coverage, HPD width, RMSE) from the summary table. Additionally, code to generate the figures for 3, S6, S7, S8
+
+-sumStats
+contains code that visualises the summary statistics and hence to generate figures 2, S1, S2, S4.
+
+- directComparison
+contains code that directly compares the posterior distribution of the MBD and the SC to generate figures S3, S5.
