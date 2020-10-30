@@ -1,5 +1,6 @@
 # structured-phylodynamic-models
-Code to reproduce the results of the paper "Quantitative comparison of pylodynamic models for structured populations"
+Code to reproduce the results of the paper "Estimating disease spread using structured coalescent and
+birth-death models: A quantitative comparison"
 
 ## Step 1: Simulation
 
