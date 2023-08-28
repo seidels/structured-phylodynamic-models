@@ -11,9 +11,9 @@ output:
 #rm(list = ls())
 library(ggplot2)
 cases= 51:53
-bdInfDir="/Volumes/stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
-scInfDir="/Volumes/Stadler/cEvoProjects/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/"
-picPath = "~/Projects/Comparison_BD_SC/Master_project/analysis/sumStats/endemic_case/plots/"
+bdInfDir="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
+scInfDir="/Volumes/Stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/forwardExp/"
+picPath = "~/Projects/structured-phylodynamic-models/analysis/sumStats/endemic_case/plots/"
 dirs = c(bdInfDir, scInfDir)
 ```
 
@@ -38,7 +38,7 @@ for (casenr in cases){
   recovDat = read.csv(paste0(bdInfDir, "recovTable_", casenr, ".csv"), 
                       header = TRUE, row.names = 1)
   BDmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr10"),  
-                                                  c("meanCoverage", "sdCoverage")]
+                                                  c("meanCoverage", "sdCoverage")] 
   hpdDat = read.csv(paste0(bdInfDir, "hpdTable_median_", casenr, ".csv"), 
                       header = TRUE, row.names = 1)
   BDmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
@@ -52,7 +52,7 @@ for (casenr in cases){
   recovDat = read.csv(paste0(scInfDir, "recovTable_", casenr, ".csv"), 
                       header = TRUE, row.names = 1)
   SCmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr01"),  
-                                                  c("meanCoverage", "sdCoverage")]
+                                                  c("meanCoverage", "sdCoverage")] *0.01
   hpdDat = read.csv(paste0(scInfDir, "hpdTable_median_", casenr, ".csv"), 
                       header = TRUE, row.names = 1)
   SCmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
@@ -178,9 +178,9 @@ p <- ggplot(data = subset(newmetric,subset = parameter == "mr01" ), aes(x=case, 
 
   geom_point(position = position_dodge(0.2), size=2, fill = "grey") +
   scale_size_manual(values = c(10,10)) + 
-  scale_shape_manual(values = c(22,24)) + 
+  scale_shape_manual(values = c(22,24), labels = c("Birth-death", "Coalescent")) + 
 
-  facet_grid(metric ~., scales = "free_y",labeller = labeller(label_both)) + theme_light() + 
+  facet_wrap(.~metric, scales = "free", labeller = labeller(label_both)) + theme_light() + 
   geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
                 width=0.1, position = position_dodge(0.2))  +
   
@@ -195,11 +195,12 @@ p <- ggplot(data = subset(newmetric,subset = parameter == "mr01" ), aes(x=case, 
   xlab("Migration cases") + 
   ylab("")
   
+p
 tiff(filename = paste0(picPath, "endemic_sumStats_mr01.tiff"), width = 1150, height = 1500, units = "px", compression = "none", family="Times", res = 300)
 print(p)
 dev.off()
 
-ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 7, height = 8, units = "cm")
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
 
 p
 ```
