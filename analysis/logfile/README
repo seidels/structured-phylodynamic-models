@@ -1,6 +1,6 @@
 Run the scripts:
 create_sumdat_sc_scinf.R to generate summary data for coalescent inference in endemic scenario, i.e. cases 51-53
-create_sumdat_sc_scinf.R to generate summary data for birth-death inference in endemic scenario, i.e. cases 51-53
+create_sumdat_sc_mbdinf.R to generate summary data for birth-death inference in endemic scenario, i.e. cases 51-53
 
 
 create_sumdat_mbd_scinf.R to generate summary data for coalescent inference in epidemic scenario, i.e. cases 45-50
