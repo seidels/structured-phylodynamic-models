@@ -1,0 +1,131 @@
+---
+title: "Visualise sumStats in endemic scenario"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Summary statistics
+
+```{r}
+rm(list = ls())
+library(ggplot2)
+library(reshape2)
+library(LaCroixColoR)
+
+cases= 51:53
+bdInfDir="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
+scInfDir_backward="/Volumes/Stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/expPrior_backwardMigration/"
+scInfDir_forward="/Volumes/Stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/forwardExp/"
+picPath = "~/Projects/structured-phylodynamic-models/analysis/sumStats/endemic_case/plots/"
+dirs = c(bdInfDir, scInfDir_backward, scInfDir_forward)
+source("~/Projects/structured-phylodynamic-models/analysis/sumStats/plotting.R")
+```
+
+```{r}
+BDmetrics = data.frame(Model=rep("Birth-death", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+SCmetrics_back = data.frame(Model=rep("Coalescent-b", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+SCmetrics_for = data.frame(Model=rep("Coalescent-f", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+```
+
+```{r}
+ctr = 1
+for (casenr in cases){
+  
+  # load MBD metrics data
+  recovDat = read.csv(paste0(bdInfDir, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr10"),  
+                                                  c("meanCoverage", "sdCoverage")] 
+  hpdDat = read.csv(paste0(bdInfDir, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(bdInfDir, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  # load SC backward metrics data
+  recovDat = read.csv(paste0(scInfDir_backward, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_back[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr01"),  
+                                                  c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(scInfDir_backward, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_back[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(scInfDir_backward, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_back[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  # load SC forward metrics data
+  recovDat = read.csv(paste0(scInfDir_forward, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_for[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr01"),  
+                                                  c("meanCoverage", "sdCoverage")]*0.01
+  hpdDat = read.csv(paste0(scInfDir_forward, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_for[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(scInfDir_forward, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  SCmetrics_for[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  ctr = ctr + 2
+}
+metric = rbind(BDmetrics, SCmetrics_back, SCmetrics_for)
+metric$case = as.factor(metric$case)
+metric$Model = factor(metric$Model, levels=c("Birth-death", "Coalescent-f", "Coalescent-b"))
+```
+
+
+
+
+### Put all plots together
+```{r}
+meanMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("meanCov", "meanHPD", "meanRMSE"), variable.name = "metric")
+sdMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("sdCov", "sdHPD", "sdRMSE"), value.name = "sd")
+newmetric = cbind(meanMetric, sdMetric[, 4:5])
+#rename metrics 
+newmetric$metric = as.character(newmetric$metric)
+newmetric$metric[which(newmetric$metric == "meanCov")] = "Coverage"
+newmetric$metric[which(newmetric$metric == "meanHPD")] = "HPD width"
+newmetric$metric[which(newmetric$metric == "meanRMSE")] = "RMSE"
+endemicMetric = newmetric
+endemicMetric$scenario = "endemic"
+```
+
+
+```{r}
+cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
+
+p = plot_sumstats(migration_rate = "mr01", cols)
+
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
+
+
+```{r}
+p = plot_sumstats(migration_rate = "mr10", cols)
+
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
