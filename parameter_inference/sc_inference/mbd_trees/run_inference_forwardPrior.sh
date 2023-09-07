@@ -14,7 +14,7 @@ code_dir="$PWD"
 scripts_4all_inf="$code_dir/../../scripts_4all_inferences"
 
 ## data dirs
-data_dir="../../../simstudy/data"
+data_dir="../../../data"
 output_dir="$data_dir/inference_logs/sc_inf/BD_rhoSamp/$1"
 tip_info_dir="$data_dir/inference_logs/bdpsi/BD_rhoSamp/$1/tip_info"
 tree_dir="$data_dir/simulated_trees/BD_rhoSamp/$1/sampled_trees"
@@ -29,24 +29,27 @@ fi
 module load java
 module load phylo 
 
+
 # list all tree files in input dir, assume there are always two files with the same base name, i.e. there always exists basename.newick and basename.nexus
 for file in $tree_dir/*; do
     
     if grep -q "nexus" <<< $file; then
 	
 	# get file name characteristics
-	echo "$file" 
+	#echo "$file" 
 	basename=`grep -oP "(?<=sampled_trees/)\S*(?=.nex)" <<< $file`
 	# extract basename 
 	seed=`grep -oP "(?<=s:)[0-9]*" <<< $basename`
-	echo $seed
+	#echo $seed
 #------------------------------------------------------------------------------#
 	# running seedwise option
 
 	if [ -z "$2" ]; then
 	    echo "Running inference on complete directory"
+
 	elif [ "$seed" -eq "$2" ]; then
-	    echo "Running inference for seed $2 only"
+	    echo "Resuming inference for seed $2 only"
+	    sbatch --time=120:00:00 --job-name="${1}_sc_${seed}" --mem-per-cpu=4000 --wrap="java -Xmx2048m -jar ~/beast2.6.jar -seed 1 -overwrite -resume -working $output_dir/${basename}_scInf.xml > $output_dir/${basename}_scInf.out "
 	else
 	    continue
 	fi
@@ -55,19 +58,19 @@ for file in $tree_dir/*; do
 	# file operations to prepare inference
       
 	# cp inference xml to output dir
-	cp $code_dir/sc_inference.xml $output_dir/${basename}_scInf.xml
+	#cp $code_dir/sc_inference_forwardExp.xml $output_dir/${basename}_scInf.xml
 	
 	# insert tip & starting tree info in inference xml
-	$code_dir/update_inference.sh $tip_info_dir $output_dir/${basename}_scInf.xml ${basename}_locations.txt ${basename}_times.txt $tree_dir/${basename}.newick
+	#$code_dir/update_inference.sh $tip_info_dir $output_dir/${basename}_scInf.xml ${basename}_locations.txt ${basename}_times.txt $tree_dir/${basename}.newick
 	
 
 #------------------------------------------------------------------------------#
 
 	# do inference
-	java -Xmx2048m -jar beast.jar -seed 1 -overwrite -working $output_dir/${basename}_scInf.xml 
+	#sbatch --time=60:00:00 --job-name="${1}_sc_${seed}" --mem-per-cpu=4000 --wrap="java -Xmx2048m -jar ~/beast2.6.jar -seed 1 -overwrite -working $output_dir/${basename}_scInf.xml > $output_dir/${basename}_scInf.out "
 
     else
-	echo "Jumping over newick file"
+	continue #echo "Jumping over newick file"
     fi
 
 done
