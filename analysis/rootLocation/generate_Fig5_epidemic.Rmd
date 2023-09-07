@@ -1,0 +1,190 @@
+---
+title: "Check Root state"
+output: html_notebook
+---
+
+# Endemic Scenario
+
+```{r, necessary parameters}
+#rm(list = ls())
+library(ggplot2)
+library(reshape2)
+library(boot)
+library(LaCroixColoR)
+
+cases = c(45:47)
+#cases = c(48:50)
+picPath = "~/Projects/structured-phylodynamic-models/analysis/rootLocation"
+```
+
+```{r, necessary functions}
+source(file = "~/Projects/structured-phylodynamic-models/analysis/rootLocation/supportRootLocation.R")
+```
+
+```{r, true root states in BD simulation}
+locFile = "~/Projects/structured-phylodynamic-models/simulation/mbd/seedLoc.txt"
+true_root_states = read.csv(locFile, sep = ";", header = FALSE)
+colnames(true_root_states) = c("seed", "root")
+```
+
+```{r}
+dat = data.frame(recovery_5050= rep(NA, 9), recovery_6040= rep(NA, 9),recovery_9010= rep(NA, 9),sd_5050=rep(NA,9), sd_6040 = rep(NA, 9), sd_9010=rep(NA,9),n_5050 =rep(0, 9), n_6040 = rep(0, 9), n_9010 = rep(0, 9), Model = rep(NA, 9), case=c(rep("fast",3), rep("medium",3),rep("slow",3)))
+```
+
+
+
+```{r, prepare shared data frame}
+rowcounter = 1
+for (case in cases){
+
+#load mbd and sc inference results
+load(paste0("/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/BD_rhoSamp/all_params_", case, ".Rdat"))
+result_mbd = get(paste0("result_", case))
+infResults_mbd = result_mbd[[2]][which(result_mbd[[2]][,3] != 0),]
+
+load(paste0("/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/BD_rhoSamp/expPrior_forwardMigration/all_params_", case, ".Rdat"))
+result_sc = get(paste0("result_", case))
+infResults_sc = result_sc[[2]][which(result_sc[[2]][,3] != 0),]
+
+load(paste0("/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/BD_rhoSamp/expPrior_backwardMigration/all_params_", case, ".Rdat"))
+result_sc_back = get(paste0("result_", case))
+infResults_sc_back = result_sc[[2]][which(result_sc_back[[2]][,3] != 0),]
+#
+  
+infResults_mbd$model = "Birth-death"
+infResults_sc$model = "Coalescent-f"
+infResults_sc_back$model = "Coalescent-b"
+
+# convert root probability to type 0
+infResults_sc[, "root"] = 1 - infResults_sc[, "root"]
+colnames(infResults_sc)[25] = "root0"
+infResults_sc_back[, "root"] = 1 - infResults_sc_back[, "root"]
+colnames(infResults_sc_back)[25] = "root0"
+infResults_combined = rbind(infResults_mbd[,c(25, 31:32)], infResults_sc[,c(25, 34:35)], infResults_sc_back[,c(25, 34:35)])
+
+# what root type is assigned, given a minimum posterior probability
+infResults_combined$assignment_5050 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0)})
+infResults_combined$assignment_6040 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0.1)})
+infResults_combined$assignment_9010 = sapply(infResults_combined[, "root0"], function(x){prob_to_assignment(prob = x, margin = 0.4)})
+
+# is type assignment correct?
+ infResults_combined$true_5050 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[4]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+ infResults_combined$true_6040 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[5]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+ infResults_combined$true_9010 = apply(X = infResults_combined, MARGIN = 1,FUN = function(x){
+    as.numeric(x[6]) == as.numeric(true_root_states[as.numeric(x[2]), "root"])})
+
+ 
+  # compute bootstrapped mean and sd to
+ dat[rowcounter,1:9] = c(bootstrapped_mean(infResults_combined, "Birth-death", "true_5050"),
+                         bootstrapped_mean(infResults_combined, "Birth-death", "true_6040"),
+                         bootstrapped_mean(infResults_combined, "Birth-death", "true_9010"),
+                         bootstrapped_sd(infResults_combined, "Birth-death", "true_5050"),
+                         bootstrapped_sd(infResults_combined, "Birth-death", "true_6040"),
+                         bootstrapped_sd(infResults_combined, "Birth-death", "true_9010"),
+                         get_n_assignments(infResults_combined, "Birth-death", "true_5050"),
+                         get_n_assignments(infResults_combined, "Birth-death", "true_6040"),
+                         get_n_assignments(infResults_combined, "Birth-death", "true_9010")
+                         )
+ dat[rowcounter, 10] = "Birth-death"
+                          
+ rowcounter = rowcounter + 1
+ 
+ dat[rowcounter,1:9] = c(bootstrapped_mean(infResults_combined, "Coalescent-f", "true_5050"),
+                         bootstrapped_mean(infResults_combined, "Coalescent-f", "true_6040"),
+                         bootstrapped_mean(infResults_combined, "Coalescent-f", "true_9010"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-f", "true_5050"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-f", "true_6040"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-f", "true_9010"),
+                         get_n_assignments(infResults_combined, "Coalescent-f", "true_5050"),
+                         get_n_assignments(infResults_combined, "Coalescent-f", "true_6040"),
+                         get_n_assignments(infResults_combined, "Coalescent-f", "true_9010"))
+ dat[rowcounter, 10] = "Coalescent-f"
+ rowcounter = rowcounter + 1
+ 
+ dat[rowcounter,1:9] = c(bootstrapped_mean(infResults_combined, "Coalescent-b", "true_5050"),
+                         bootstrapped_mean(infResults_combined, "Coalescent-b", "true_6040"),
+                         bootstrapped_mean(infResults_combined, "Coalescent-b", "true_9010"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-b", "true_5050"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-b", "true_6040"),
+                         bootstrapped_sd(infResults_combined, "Coalescent-b", "true_9010"),
+                         get_n_assignments(infResults_combined, "Coalescent-b", "true_5050"),
+                         get_n_assignments(infResults_combined, "Coalescent-b", "true_6040"),
+                         get_n_assignments(infResults_combined, "Coalescent-b", "true_9010"))
+ dat[rowcounter, 10] = "Coalescent-b"
+ rowcounter = rowcounter + 1
+ }
+
+# build data frame
+recov_melted = melt(dat[,c(1:3, 10,11)], id.vars = c("Model", "case"), variable.name = "recoveries")
+sd_melted = melt(dat[,c(4:6, 10,11)], id.vars = c("Model", "case"), variable.name = "sd", value.name = "sd_value")
+count_melted = melt(dat[,c(7:9, 10,11)], id.vars = c("Model", "case"), variable.name = "count", value.name = "n-trees")
+
+dat_melted = cbind(recov_melted, sd_melted[, 3:4], count_melted[, 3:4])
+dat_melted$recoveries = as.character(dat_melted$recoveries)
+dat_melted[which(dat_melted$recoveries == "recovery_5050"), "recoveries"] = ">50%"
+dat_melted[which(dat_melted$recoveries == "recovery_6040"), "recoveries"] = ">60%"
+dat_melted[which(dat_melted$recoveries == "recovery_9010"), "recoveries"] = ">90%"
+
+# make count value continuous
+dat_melted$`n-trees` = as.numeric(dat_melted$`n-trees`)
+dat_epi = dat_melted
+```
+
+
+```{r}
+#combine dat from epidemic and endemic inference
+dat_end$scenario = "Endemic"
+dat_epi$scenario = "Epidemic"
+dat_combined = rbind(dat_end, dat_epi)
+dat_combined$Model = factor(dat_combined$Model, levels = c("Birth-death", "Coalescent-f", "Coalescent-b"))
+```
+
+# Plots
+
+```{r}
+cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
+
+p <- ggplot(data = subset(dat_combined, subset = recoveries %in% c(">50%",">90%")), aes(x = case, y = as.numeric(value), col = Model, size = `n-trees`)) + 
+  #points and their shape
+  geom_point(position = position_dodge(0.8)) +
+  
+  geom_errorbar(aes(ymin=value-sd_value/2, ymax=value + sd_value/2), 
+                size=0.4, position = position_dodge(0.8)) +
+  
+  scale_color_manual(values = cols) + 
+  scale_size(name = "# Trees", breaks = c(30, 60, 100))+
+  #add desired value
+  geom_hline(data = data.frame(yint=1.0), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+    geom_hline(data = data.frame(yint=0.5), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+
+  facet_grid(scenario~recoveries)+
+  theme_light(base_size = 12, base_family = "Times") + 
+  ylab("Recovery of root location") + 
+  xlab("Migration cases") + theme_bw()+ 
+  theme(panel.grid.minor = element_blank(), legend.position = "top", text = element_text(family = "serif",colour = "black"), 
+        strip.background = element_rect(colour="black", fill="white"), legend.text = element_text(colour = "black", size = 9.0),
+        legend.title = element_text(size = 11), legend.spacing.x = unit(x = 0.1, "cm"))  +
+  guides(colour = guide_legend(order = 1), size = guide_legend(order=2))
+
+p  
+#for high sampling
+# tiff(filename = paste0(picPath, "/rootRecovery_", cases[1],"-", cases[3], ".tiff"), res = 300, width = 13, height = 7.5, units = "cm", compression = "none")
+# p
+# dev.off()
+
+#for combined epi and end plot
+
+#ggsave(filename = paste0(picPath, "/rootRecovery_complete", ".eps"), dpi  = 300, width = 13, height = 15, units = "cm", device = "eps")
+ggsave(filename = paste0(picPath, "/rootRecovery_complete.pdf"), plot = p, width = 15, height =10, units = "cm")
+
+
+p
+```
+
+
+
+
+
+
