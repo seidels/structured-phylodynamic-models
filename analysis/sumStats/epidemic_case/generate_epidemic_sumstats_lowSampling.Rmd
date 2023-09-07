@@ -1,0 +1,241 @@
+---
+title: "Visualise sumStats in epidemic scenario"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Summary statistics
+
+TODO: ADD star to the RMSE for slow SC! - TBD in inkscape. Mention in legend
+
+```{r}
+rm(list = ls())
+# TODO run ("~/Projects/Comparison_BD_SC/Master_project/analysis/sumStats/endemic_case/generate_Fig2_part1.Rmd") to get 
+# the endemic metrics
+# then run this rmd file
+library(ggplot2)
+library(LaCroixColoR)
+
+## cases 45:47 give Fig 2 (m_rb) and Fig S1 (m_br); cases 48:50 give Fig S4
+cases= 45:47 
+bdInfDir="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/BD_rhoSamp/"
+scInfDir_forward="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/BD_rhoSamp/expPrior_forwardMigration/"
+scInfDir_backward="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/BD_rhoSamp/expPrior_backwardMigration/"
+picPath = "~/Projects/structured-phylodynamic-models/analysis/sumStats/epidemic_case/plots/"
+dirs = c(bdInfDir, scInfDir_forward, scInfDir_backward)
+source("~/Projects/structured-phylodynamic-models/analysis/sumStats/plotting.R")
+
+```
+
+```{r}
+BDmetrics = data.frame(Model=rep("Birth-death", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+SC_for_metrics = data.frame(Model=rep("Coalescent-f", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+SC_back_metrics = data.frame(Model=rep("Coalescent-b", 6), case=c(rep("fast",2), rep("medium",2), rep("slow",2)), parameter=rep(c("mr01", "mr10"), 3),
+                      meanCov=rep(-1,6), sdCov=rep(-1,6),
+                      meanHPD=rep(-1, 6), sdHPD=rep(-1,6),
+                      meanRMSE=rep(-1,6), sdRMSE=rep(-1,6)
+                      )
+```
+
+```{r}
+ctr = 1
+for (casenr in cases){
+  
+  # load BD metrics data
+  recovDat = read.csv(paste0(bdInfDir, "recovTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr10", "mr01"),  
+                                                  c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(bdInfDir, "hpdTable_median_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr10", "mr01"),  
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(bdInfDir, "rmseTable_", casenr, ".csv"), 
+                      header = TRUE, row.names = 1)
+  BDmetrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr10", "mr01"),  
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  # # load SC forward metrics data
+  recovDat = read.csv(paste0(scInfDir_forward, "recovTable_", casenr, ".csv"), 
+                       header = TRUE, row.names = 1)
+  SC_for_metrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr10"),  
+                                                   c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(scInfDir_forward, "hpdTable_median_", casenr, ".csv"),
+                      header = TRUE, row.names = 1)
+  SC_for_metrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(scInfDir_forward, "rmseTable_", casenr, ".csv"),
+                      header = TRUE, row.names = 1)
+  SC_for_metrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),
+                                                  c("meanRMSE", "sdRMSE")]
+  
+  recovDat = read.csv(paste0(scInfDir_backward, "recovTable_", casenr, ".csv"), 
+                       header = TRUE, row.names = 1)
+  SC_back_metrics[ctr:(ctr+1),c("meanCov", "sdCov")] = recovDat[c("mr01", "mr10"),  
+                                                   c("meanCoverage", "sdCoverage")]
+  hpdDat = read.csv(paste0(scInfDir_backward, "hpdTable_median_", casenr, ".csv"),
+                      header = TRUE, row.names = 1)
+  SC_back_metrics[ctr:(ctr+1),c("meanHPD", "sdHPD")] = hpdDat[c("mr01", "mr10"),
+                                                  c("meanHPD", "sdHPD")]
+  rmseDat = read.csv(paste0(scInfDir_backward, "rmseTable_", casenr, ".csv"),
+                      header = TRUE, row.names = 1)
+  SC_back_metrics[ctr:(ctr+1),c("meanRMSE", "sdRMSE")] = rmseDat[c("mr01", "mr10"),
+                                                  c("meanRMSE", "sdRMSE")]
+
+  ctr = ctr + 2
+}
+metric = rbind(BDmetrics, SC_for_metrics, SC_back_metrics)
+metric$meanCov = metric$meanCov / 100
+metric$sdCov = metric$sdCov/100
+metric$case = as.factor(metric$case)
+metric$Model = factor(metric$Model, levels=c("Birth-death", "Coalescent-f", "Coalescent-b"))
+```
+
+```{r}
+metric[which(metric$Model %in% c("Coalescent-f", "Coalescent-b") & metric$case == "slow"), c("meanRMSE", "sdRMSE") ] = c(13, 13, 13,13,0,0,0,0)
+
+```
+
+
+
+
+## Put all metrics together for epidemic
+
+
+### Put all plots together
+```{r}
+library(reshape2)
+meanMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("meanCov", "meanHPD", "meanRMSE"), variable.name = "metric")
+sdMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("sdCov", "sdHPD", "sdRMSE"), value.name = "sd")
+newmetric = cbind(meanMetric, sdMetric[, 4:5])
+#rename metrics 
+newmetric$metric = as.character(newmetric$metric)
+newmetric$metric[which(newmetric$metric == "meanCov")] = "Coverage"
+newmetric$metric[which(newmetric$metric == "meanHPD")] = "HPD width"
+newmetric$metric[which(newmetric$metric == "meanRMSE")] = "RMSE"
+endemicMetric = newmetric
+endemicMetric$scenario = "endemic"
+```
+
+
+
+
+
+```{r}
+cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
+
+p = plot_sumstats(migration_rate = "mr01", cols)
+
+ggsave(filename = paste0(picPath, "epidemic_sumStats_lowSampling_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
+
+```{r}
+cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
+
+p = plot_sumstats(migration_rate = "mr10", cols)
+
+ggsave(filename = paste0(picPath, "epidemic_sumStats_lowSampling_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
+
+```{r}
+p <- ggplot(data = subset(newmetric,subset = parameter == "mr01" ), aes(x=case, y = value, shape=Model))+
+                                                                        
+                                                                        #fill=Model, col=Model)) +
+
+  geom_point(position = position_dodge(0.2), size=2, fill = "grey") +
+  scale_size_manual(values = c(10,10)) + 
+  scale_shape_manual(values = c(22,24), labels = c("Birth-death", "Coalescent")) + 
+
+
+  facet_wrap(.~ metric, scales = "free_y",labeller = labeller(label_both)) + theme_light() + 
+  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
+                width=0.1, position = position_dodge(0.2))  +
+  
+  # add desired values
+  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
+  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
+  
+  theme_bw(base_family = "Times", base_size = 12) + theme(legend.position = "top", panel.grid.minor = element_blank())+ 
+
+  xlab("Migration cases") + 
+  ylab("")
+p  
+#tiff(filename = paste0(picPath, "endemic_sumStats_mr10.tiff"), width = 1500, height = 1500, units = "px", compression = "none", family="Times", res = 300)
+#print(p)
+#dev.off()
+
+ggsave(filename = paste0(picPath, "epidemic_sumStats_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
+
+
+
+
+### Put all plots together
+```{r}
+library(reshape2)
+meanMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("meanCov", "meanHPD", "meanRMSE"), variable.name = "metric")
+sdMetric = melt(metric, id.vars = c("Model", "case", "parameter"), measure.vars = c("sdCov", "sdHPD", "sdRMSE"), value.name = "sd")
+newmetric = cbind(meanMetric, sdMetric[, 4:5])
+#rename metrics 
+newmetric$metric = as.character(newmetric$metric)
+newmetric$metric[which(newmetric$metric == "meanCov")] = "Coverage"
+newmetric$metric[which(newmetric$metric == "meanHPD")] = "HPD width"
+newmetric$metric[which(newmetric$metric == "meanRMSE")] = "RMSE"
+epidemicMetric = newmetric
+epidemicMetric$scenario = "epidemic"
+completeMetric = rbind(epidemicMetric, endemicMetric)
+```
+
+```{r}
+p <- ggplot(data = subset(newmetric,subset = parameter == "mr10" ), aes(x=case, y = value, shape=Model))+
+                                                                        
+                                                                        #fill=Model, col=Model)) +
+
+  geom_point(position = position_dodge(0.2), size=2, fill = "grey") +
+  # add invisible points s.t. y-axis for highsamp and lowsamp are the same
+  #geom_point(data = data.frame(value=0.67, metric="Coverage", case="fast", Model="MBD"), colour="white")+
+  #geom_point(data = data.frame(value=18, metric="HPD width", case="slow", Model="MBD"), colour="white")+
+  #geom_point(data = data.frame(value=180, metric="RMSE", case="slow", Model="MBD"), colour="white")+
+  scale_size_manual(values = c(10,10)) + 
+  scale_shape_manual(values = c(22,24), labels = c("Birth-death", "Coalescent")) + 
+
+  facet_wrap(.~ metric, scales = "free_y",labeller = labeller(label_both)) + theme_light() + 
+  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
+                width=0.1, position = position_dodge(0.2), )  +
+  
+  # add desired values
+  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
+  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
+  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
+  
+  theme_bw(base_size = 12, base_family = "Times") + theme(panel.grid.minor = element_blank(), legend.position = "top") +
+
+  xlab("Migration cases") + 
+  ylab("")
+  
+
+ 
+ggsave(filename = paste0(picPath, "epidemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
+
+p
+```
+
+
+
+
