@@ -1,0 +1,267 @@
+---
+title: "SC inference in epidemic case"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r  load files}
+rm(list = ls())
+case = 45
+load(paste0("/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/BD_rhoSamp/expPrior_backwardMigration/all_params_", case, ".Rdat"))
+#load(paste0("~/Projects/structured-phylodynamic-models/data/summary_data/sc_inf/BD_rhoSamp/expPrior_backwardMigration/all_params_",
+result = get(paste0("result_", case))
+simParams = result[[1]]
+infResults = result[[2]][which(result[[2]][,3] != 0),]
+infResults[, "seed"] = as.numeric(infResults[, "seed"])
+picPath = "~/Projects/structured-phylodynamic-models/analysis/coalescent_exp_growth/plots/"
+```
+
+
+
+```{r}
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(viridis)
+library(ggpubr)
+```
+
+
+
+
+## Look at inferred migration rates
+
+For high migration forward in time, we see
+```{r }
+q_melted  = melt(infResults[,c(28,31,34)], id.vars="seed", variable.name = "Rate" )
+q_upper_melted = melt(infResults[,c(30,33,34)], id.vars="seed" )
+q_lower_melted = melt(infResults[,c(29,32,34)], id.vars="seed" )
+colnames(q_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(q_lower_melted) <- c("seed", "var_lower", "val_lower")
+qdat = cbind(q_melted, q_lower_melted[, c(2,3)], q_upper_melted[, c(2,3)])
+
+```
+
+```{r}
+# order by q01
+subdat = qdat[which(qdat$Rate == "mr01"), ]
+subdat = subdat[order(subdat$value), ]
+subdat$orderedSeed = 1:nrow(subdat)
+
+mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
+qdat$orderedSeed = -1
+for (i in 1:length(qdat$orderedSeed)){
+  qdat[i, "orderedSeed"] = mapping[which(mapping$seed == qdat[i, "seed"]), "ind"]
+}
+qdat = qdat[order(qdat$orderedSeed),]
+```
+
+```{r}
+# add prior
+set.seed(1)
+oneOnX_sample_generator <- function(n=1, lbound, ubound){
+  
+  unif = runif(n = n,min = log(lbound), max = log(ubound) )
+  oneOnXsample = exp(unif)
+
+  # oneOnXsample = -1
+  # # bound 1/x between [10e-3, 10e3]
+  # while (oneOnXsample > 1000 | oneOnXsample < 0.001){
+  #   # generate sample from unif distr
+  #   unif_sample =runif(1)
+  #   # transform to X ~ 1/X
+  #   oneOnXsample = ubound**unif_sample * lbound**(1 - unif_sample)
+  # }
+
+ return(oneOnXsample)
+}
+# generate samples from the prior
+q01_samples = rexp(n = 100000, rate = 1)  # backward migration 
+N0_samples = oneOnX_sample_generator(lbound = 0.01, ubound = 100, n = 100000)
+N1_samples = oneOnX_sample_generator(lbound = 0.01, ubound = 100, n = 100000)
+N0_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n = 100000)
+N1_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n = 100000)
+mr10_samples = q01_samples * N0_samples /N1_samples # forward migration
+
+# prior on mr01 in SC analysis
+med_sc = as.numeric(median(mr10_samples, na.rm = TRUE))
+lower_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[1]])
+upper_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[2]])
+
+# prior on mr01 in MBD analysis (is Exp(1), which is what the q01 samples are drawn from)
+med_bd  = as.numeric(median(q01_samples, na.rm = TRUE))
+lower_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[1]])
+upper_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[2]])
+
+qdat$Rate = as.character(qdat$Rate)
+qdat[nrow(qdat) + 1, ] = c(110, "mr10_prior", med_sc, "mr10_lower", lower_sc, "mr10_upper", upper_sc, 105)
+
+qdat$value = as.numeric(qdat$value)
+qdat$orderedSeed = as.numeric(qdat$orderedSeed)
+qdat =qdat[order(qdat$orderedSeed), ]
+```
+
+```{r, find root assoc to seed}
+infResults = infResults[order(infResults$seed),]
+l = as.numeric(sapply(unique(qdat$seed), function(x){
+  infResults[which(infResults$seed == x), "root"]
+}))
+
+```
+
+Calculate the number of times, the elevated migration rate is associated with the root.
+```{r}
+infResults$rootBin = round(infResults$root)
+sum((infResults$mr01 > infResults$mr10) & (infResults$rootBin == 0)) + sum((infResults$mr10 > infResults$mr01) & (infResults$rootBin == 1))
+```
+
+```{r}
+qdat$root = as.numeric(sapply(qdat$seed, function(x){
+  infResults[which(infResults$seed == x), "root"]
+}))
+qdat$rootBin = round(qdat$root)
+
+cols = sapply(1:nrow(qdat),FUN =  function(x){
+  if(any(is.na(qdat[x, ]))){
+    return(NA)
+  }
+  if(qdat[x, "rootBin"] == 0 && qdat[x, "Rate"] == "mr01"){
+    return("up")
+    
+  }else if(qdat[x, "rootBin"] == 1 && qdat[x, "Rate"] =="mr10"){
+    return("up")
+    
+  }else if(qdat[x, "rootBin"] == 0 && qdat[x, "Rate"] =="mr10"){
+    return("down")
+    
+  }else{
+    return("down")
+  }
+    })
+qdat$col = cols
+```
+
+
+```{r}
+library(ggsci)
+library(latex2exp)
+library(RColorBrewer)
+
+p<- ggplot(qdat, aes(col = col)) + 
+  # plot posterior intervals & medians
+  geom_pointrange( mapping = aes(x=orderedSeed, y=value, ymin=as.numeric(val_lower), ymax=as.numeric(val_upper)), shape=21, fatten = -0.75, size = 0.6, alpha = 0.5) + 
+  # plot true migration rate
+  geom_hline(yintercept = as.numeric(as.numeric(simParams[, "mr10"])), alpha = 0.5, size=0.2) +
+  # plot the index upon which the root state changes from all 1 to all 0
+  theme_bw(base_family = "Times", base_size = 8) + 
+  ylab("Migration rate") + 
+  scale_color_manual(values = brewer.pal(n = 4, "Set1")) + 
+  xlab("Simulation Number")+
+  coord_cartesian(ylim = c(0, 10))+
+  #ylim(-20, 8)+
+  
+  theme(panel.grid = element_blank(), legend.position = "none", legend.title = element_blank(), legend.background = element_rect(fill = "transparent"), legend.text = element_text(family = "Times", size = 6))+  guides(col = guide_legend(nrow = 1, override.aes = list(size = 0.1)), fill = FALSE) 
+p
+
+
+ggsave(filename = paste0(picPath, "case",case,"_migRates_backwardExp.pdf"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+p #
+#+ geom_point(data = data.frame(orderedSeed=unique(qdat$seed)[1:94], Rate = "rootLocation", value= infResults$root, stringsAsFactors = FALSE), aes(x= orderedSeed, y = value)) 
+```
+
+
+
+```{r}
+cor.test(infResults$mr01, infResults$mr10, method = "kendall")
+```
+
+
+## Look at inferred population sizes
+
+
+```{r }
+N_melted  = melt(infResults[,c(1,4,34)], id.vars="seed" )
+N_upper_melted = melt(infResults[,c(3,6,34)], id.vars="seed" )
+N_lower_melted = melt(infResults[,c(2,5,34)], id.vars="seed" )
+colnames(N_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(N_lower_melted) <- c("seed", "var_lower", "val_lower")
+
+Ndat = cbind(N_melted, N_lower_melted[, c(2,3)], N_upper_melted[, c(2,3)])
+```
+
+```{r}
+#ruse the ordering from before
+Ndat$orderedSeed = -1
+for (i in 1:length(Ndat$orderedSeed)){
+  Ndat[i, "orderedSeed"] = mapping[which(mapping$seed == Ndat[i, "seed"]), "ind"]
+}
+Ndat = Ndat[order(Ndat$orderedSeed),]
+
+Ndat$root = as.numeric(sapply(Ndat$seed, function(x){
+  infResults[which(infResults$seed == x), "root"]
+}))
+Ndat$rootBin = round(Ndat$root)
+
+cols = sapply(1:nrow(Ndat),FUN =  function(x){
+  if(any(is.na(Ndat[x, ]))){
+    return(NA)
+  }
+  if(Ndat[x, "rootBin"] == 0 && Ndat[x, "variable"] == "N1"){
+    return("up")
+    
+  }else if(Ndat[x, "rootBin"] == 1 && Ndat[x, "variable"] =="N0"){
+    return("up")
+    
+  }else if(Ndat[x, "rootBin"] == 0 && Ndat[x, "variable"] =="N0"){
+    return("down")
+    
+  }else{
+    return("down")
+  }
+    })
+Ndat$col = cols
+
+```
+
+
+
+```{r}
+p <- ggplot(Ndat, aes(x=orderedSeed, y=log(value), col = cols)) +
+  geom_pointrange(aes(ymin=log(as.numeric(val_lower)), ymax=log(as.numeric(val_upper))), shape=21, fatten = -0.75, size = 0.6, alpha = 0.5) +
+  
+ # plot the index upon which the root state changes from all 1 to all 0
+  #geom_vline(xintercept = which(l<1)[1], alpha = 0.5) +
+  
+  # plot final population size for both demes from BD sim
+  #geom_hline(yintercept = log(300/2/1.05), col= "black") + 
+  
+  theme_bw(base_family = "Times", base_size = 8) +
+  ylab("Log population size") + 
+  scale_color_manual(values = brewer.pal(n = 2, "Set1")[1:2], labels = unname(TeX(c("$N_{root}", "$N_{tips}")))) + 
+  xlab("Simulation Number")+
+  theme(panel.grid = element_blank(), legend.position = c(0.2, 0.1), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"), legend.text = element_text(family = "Times", size = 6))+  guides(col = guide_legend(nrow = 1, override.aes = list(size = 0.1)), fill = FALSE) +
+  ylim(-7, 9)
+
+#tiff(filename = paste0(picPath, "case", case,"_popSizes.tiff"),width = 6.5, height = 5, units = "cm", compression = "none", family="Times", res = 300)
+#print(p)
+#dev.off()
+
+ggsave(filename = paste0(picPath, "case",case,"_popSizes_backwardExp.pdf"), width = 6.5, height = 5, units = "cm", plot = p, dpi = 300)
+p
+```
+
+
+
+
+
+
+
+
+
+
+
