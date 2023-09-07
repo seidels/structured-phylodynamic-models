@@ -165,7 +165,7 @@ value="16=0,37=0,97=0,31=0,62=1,52=0,86=1,70=1,63=1,89=1,64=1,17=0,33=0,91=0,39=
   <map name="OneOnX" >beast.math.distributions.OneOnX</map>
 
 
-  <run id="mcmc" spec="MCMC" chainLength="1000000000">
+  <run id="mcmc" spec="MCMC" chainLength="10000000000">
     <state id="state" storeEvery="5000">
       <!-- load starting tree from tree simulation file and do fixed
 	   inference, e.g. change only the colors and time points when colors
@@ -205,15 +205,15 @@ value="16=0,37=0,97=0,31=0,62=1,52=0,86=1,70=1,63=1,89=1,64=1,17=0,33=0,91=0,39=
 	  <OneOnX name="distr"/> 
 	</prior> 
 	<!-- prior on migration rate -->
- 	<!-- <prior id="m_01_prior" name="distribution" x="@m_01"> -->
-	<!--   <Exponential name="distr" mean="1.0"/> -->
-	<!-- </prior> -->
-	<!-- <prior id="m_10_prior" name="distribution" x="@m_10"> -->
-	<!--   <Exponential name="distr" mean="1.0"/> -->
-	<!-- </prior> -->
-	<prior id="rateMatrixPrior" name="distribution" x="@rateMatrix_">
+ 	<prior id="m_01_prior" name="distribution" x="@m_01">
 	  <Exponential name="distr" mean="1.0"/>
 	</prior>
+	<prior id="m_10_prior" name="distribution" x="@m_10">
+	  <Exponential name="distr" mean="1.0"/>
+	</prior>
+	<!-- <prior id="rateMatrixPrior" name="distribution" x="@rateMatrix_"> -->
+	<!--   <Exponential name="distr" mean="1.0"/> -->
+	<!-- </prior> -->
 
 
 	<distribution id="structuredCoalescent.t:h3n2_2deme" spec="multitypetree.distributions.StructuredCoalescentTreeDensity" multiTypeTree="@inputTree">
@@ -278,13 +278,13 @@ value="16=0,37=0,97=0,31=0,62=1,52=0,86=1,70=1,63=1,89=1,64=1,17=0,33=0,91=0,39=
       <log idref="prior"/>
     </logger>
 
-    <logger id="treelog.t:h3n2_2deme" fileName="$(filebase).$(seed).trees" logEvery="10000" mode="tree">
-      <log idref="inputTree"/>
-    </logger>
+    <!-- <logger id="treelog.t:h3n2_2deme" fileName="$(filebase).$(seed).trees" logEvery="10000" mode="tree"> -->
+    <!--   <log idref="inputTree"/> -->
+    <!-- </logger> -->
 
-    <logger id="typednodetreelog.t:h3n2_2deme" fileName="$(filebase).$(seed).typedNode.trees" logEvery="10000" mode="tree">
-      <log id="TypedNodeTreeLogger.0" spec="multitypetree.util.TypedNodeTreeLogger" multiTypeTree="@inputTree"/>
-    </logger>
+    <!-- <logger id="typednodetreelog.t:h3n2_2deme" fileName="$(filebase).$(seed).typedNode.trees" logEvery="10000" mode="tree"> -->
+    <!--   <log id="TypedNodeTreeLogger.0" spec="multitypetree.util.TypedNodeTreeLogger" multiTypeTree="@inputTree"/> -->
+    <!-- </logger> -->
 
   </run>
 

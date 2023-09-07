@@ -14,9 +14,9 @@ code_dir="$PWD"
 scripts_4all_inf="$code_dir/../../scripts_4all_inferences"
 
 ## data dirs
-data_dir="../../../simstudy/data"
-output_dir="$data_dir/inference_logs/sc_inf/SC/$1"
-tip_info_dir="$output_dir/tip_info"
+data_dir="../../../data"
+output_dir="$data_dir/inference_logs/sc_inf/SC/backwardMigration/$1"
+tip_info_dir="$output_dir/../../$1/tip_info"
 tree_dir="$data_dir/simulated_trees/SC/$1"
 
 
@@ -36,40 +36,43 @@ for file in $tree_dir/*; do
     if grep -q "nexus" <<< $file; then
 	
 	# get file name characteristics
-	echo "$file" 
+	#echo "$file" 
 	basename=`grep -oP "(?<=$1/)\S*(?=.nex)" <<< $file`
 	# extract basename 
 	seed=`grep -oP "(?<=s:)[0-9]*" <<< $basename`
-	echo $seed
+	#echo $seed
+
+#------------------------------------------------------------------------------#
+	# file operations to prepare inference - uncopy before starting inference for the first time!
+      
+	# cp inference xml to output dir
+	#cp $code_dir/sc_backward_inference.xml $output_dir/${basename}_scInf.xml
+	
+	# insert tip & starting tree info in inference xml
+	#$code_dir/update_inference.sh $tip_info_dir $output_dir/${basename}_scInf.xml locations.txt ${basename}_times.txt $tree_dir/${basename}.newick
+
 #------------------------------------------------------------------------------#
 	# running seedwise option
 
 	if [ -z "$2" ]; then
 	    echo "Running inference on complete directory"
+
 	elif [ "$seed" -eq "$2" ]; then
 	    echo "Running inference for seed $2 only"
+
+	    # do inference
+	    sbatch --time=180:00:00 --job-name="${1}_sc_${seed}" --mem-per-cpu=4000 --wrap="java -Xmx2048m -jar ~/beast2.6.jar -seed 1 -overwrite -working $output_dir/${basename}_scInf.xml > $output_dir/${basename}_scInf.out " 
+
 	else
 	    continue
 	fi
-
-#------------------------------------------------------------------------------#
-	# file operations to prepare inference
-      
-	# cp inference xml to output dir
-	cp $code_dir/sc_inference.xml $output_dir/${basename}_scInf.xml
 	
-	# insert tip & starting tree info in inference xml
-	$code_dir/update_inference.sh $tip_info_dir $output_dir/${basename}_scInf.xml locations.txt ${basename}_times.txt $tree_dir/${basename}.newick
-	
+	#sbatch --time=180:00:00 --job-name="${1}_sc_${seed}" --mem-per-cpu=4000 --wrap="java -Xmx2048m -jar ~/beast2.6.jar -seed 1 -overwrite -working $output_dir/${basename}_scInf.xml > $output_dir/${basename}_scInf.out " 
 
-#------------------------------------------------------------------------------#
-	
-	# do inference
-
-	java -Xmx2048m -jar beast/lib/launcher.jar -seed 1 -overwrite -working $output_dir/${basename}_scInf.xml 
+#------------------------------------------------------------------------------#	
        
     else
-	echo "Jumping over newick file"
+	continue
+	#echo "Jumping over newick file"
     fi
-
 done
