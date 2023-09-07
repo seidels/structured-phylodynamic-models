@@ -116,7 +116,7 @@ cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
 
 p = plot_sumstats(migration_rate = "mr01", cols)
 
-ggsave(filename = paste0(picPath, "endemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
 
 p
 ```
