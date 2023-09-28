@@ -8,10 +8,10 @@ output:
 # Summary statistics
 
 ```{r}
-#rm(list = ls())
+rm(list = ls())
 library(ggplot2)
-library(LaCroixColoR)
 library(reshape2)
+library(LaCroixColoR)
 
 cases= 51:53
 bdInfDir="/Volumes/stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
@@ -19,6 +19,7 @@ scInfDir_backward="/Volumes/Stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstud
 scInfDir_forward="/Volumes/Stadler/cEvoUnpublished/2018-Sophie-CompBDSC/simstudy_3/data/summary_data/sc_inf/SC/forwardExp/"
 picPath = "~/Projects/structured-phylodynamic-models/analysis/sumStats/endemic_case/plots/"
 dirs = c(bdInfDir, scInfDir_backward, scInfDir_forward)
+source("~/Projects/structured-phylodynamic-models/analysis/sumStats/plotting.R")
 ```
 
 ```{r}
@@ -89,6 +90,7 @@ for (casenr in cases){
 }
 metric = rbind(BDmetrics, SCmetrics_back, SCmetrics_for)
 metric$case = as.factor(metric$case)
+metric$Model = factor(metric$Model, levels=c("Birth-death", "Coalescent-f", "Coalescent-b"))
 ```
 
 
@@ -110,61 +112,20 @@ endemicMetric$scenario = "endemic"
 
 
 ```{r}
-cols =lacroix_palette("Lemon", n = 6)[c(6, 1,2)]
+cols =lacroix_palette("Lemon", n = 6)[c(1, 5,6)]
 
-p <- ggplot(data = subset(newmetric,subset = parameter == "mr10" ), aes(x=case, y = value, col=Model, fill=Model))+
+p = plot_sumstats(migration_rate = "mr01", cols)
 
-  geom_point(position = position_dodge(0.5), size=2) +
-  scale_size_manual(values = c(14,14,14)) + 
-  facet_wrap(.~ metric, scales = "free_y") + theme_light() + 
-  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
-                width=0.1, position = position_dodge(0.5))+
-  scale_fill_manual(values = cols)+
-  scale_color_manual(values = cols)+
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
 
- # add desired values
-  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
-  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
-  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
-  
-  theme_bw() + theme(legend.position = "top", text = element_text(family = "serif"), strip.background = element_rect(colour="black",
-                                        fill="white"))+ 
-  
-  xlab("Migration cases") + 
-  ylab("")
 p
- 
-ggsave(filename = paste0(picPath, "endemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
-
 ```
 
 
 ```{r}
-cols =lacroix_palette("Lemon", n = 6)[c(6, 1,2)]
+p = plot_sumstats(migration_rate = "mr10", cols)
 
-p <- ggplot(data = subset(newmetric,subset = parameter == "mr01" ), aes(x=case, y = value, col=Model, fill=Model))+
+ggsave(filename = paste0(picPath, "endemic_sumStats_mr10.pdf"), plot = p, width = 15, height = 8, units = "cm")
 
-  geom_point(position = position_dodge(0.5), size=2) +
-  scale_size_manual(values = c(14,14,14)) + 
-  facet_wrap(.~ metric, scales = "free_y") + theme_light() + 
-  geom_errorbar(aes(ymin=value-sd/2, ymax=value + sd/2), 
-                width=0.1, position = position_dodge(0.5))+
-  scale_fill_manual(values = cols)+
-  scale_color_manual(values = cols)+
-
- # add desired values
-  geom_hline(data = data.frame(yint=1.0, metric="Coverage"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+ 
-  geom_hline(data = data.frame(yint=0.0, metric="HPD width"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6)+
-  geom_hline(data = data.frame(yint=0.0, metric="RMSE"), aes(yintercept=yint), linetype="dashed", colour="#990000", alpha=0.6) +
-  
-  theme_bw() + theme(legend.position = "top", text = element_text(family = "serif"), strip.background = element_rect(colour="black",
-                                        fill="white"))+ 
-  
-  xlab("Migration cases") + 
-  ylab("")
 p
- 
-ggsave(filename = paste0(picPath, "endemic_sumStats_mr01.pdf"), plot = p, width = 15, height = 8, units = "cm")
 ```
-
-
