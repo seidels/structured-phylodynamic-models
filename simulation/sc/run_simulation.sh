@@ -21,8 +21,8 @@ then
 fi
 
 ## define and create directories
-outputDirTrees="../../simstudy/data/simulated_trees/SC/$1"
-outputDirSamplingTimes="../../simstudy/data/inference_logs/sc_inf/SC/$1/tip_info"
+outputDirTrees="../../data/simulated_trees/SC/$1"
+outputDirSamplingTimes="../../data/inference_logs/sc_inf/SC/$1/tip_info"
 code_dir="$PWD"
 
 if [ ! -d "$outputDirTrees" ]; then
@@ -96,7 +96,7 @@ for seed in `seq 1 100`; do
     params_for_xml="migration_rate_01=${backmigration_rate_01},migration_rate_10=${backmigration_rate_10},coal_rate_0=${coalescence_rate_0},coal_rate_1=${coalescence_rate_1},identifier=$outputDirTrees/cr0:${coalescence_rate_0}_cr1:${coalescence_rate_1}_q01:${backmigration_rate_01}_q10:${backmigration_rate_10}_s:${seed}${params_for_xml}"
 
     # simulate
-    java -Xmx3072m -Xss10m -jar beast.jar -seed $seed -D $params_for_xml -overwrite $code_dir/tmp.xml
+    java -Xmx3072m -Xss10m -jar ~/beast2.6.jar -seed $seed -D $params_for_xml -overwrite $code_dir/tmp.xml
     rm $code_dir/tmp.xml
    
     
