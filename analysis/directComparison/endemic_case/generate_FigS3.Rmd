@@ -9,16 +9,20 @@ output:
 
 ```{r}
 rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Projects/structured-phylodynamic-models/")
 library(ggplot2)
 library(plyr)
 library(dplyr)
 library(reshape2)
 library(viridis)
-source("../analysis/logfile/summary_data_from_BEAST_log.R")
+source("~/Projects/structured-phylodynamic-models/analysis/logfile/summary_data_from_BEAST_log.R")
 case= 51
-bdInfDir="../data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
-scInfDir="../data/summary_data/sc_inf/SC/forwardExp/"
-picPath = "../analysis/directComparison/endemic_case/plots/"
+expMean = 1.0
+bdInfDir="~/Projects/structured-phylodynamic-models/data/summary_data/bdpsi/SC/NodeRetype_allRateSwappers_samplingChangeTime/"
+scInfDir_back="~/Projects/structured-phylodynamic-models/data/summary_data/sc_inf/SC/expPrior_backwardMigration/"
+scInfDir_forward="~/Projects/structured-phylodynamic-models/data/summary_data/sc_inf/SC/forwardExp/"
+
+picPath = "~/Projects/structured-phylodynamic-models/analysis/directComparison/endemic_case/plots/"
 ```
 
 ```{r}
@@ -26,53 +30,72 @@ bdResult = load(paste0(bdInfDir, "all_params_", case, ".Rdat"))
 bdResult = get(bdResult)
 bdInfResult = bdResult[[2]][which(bdResult[[2]][1,] != 0.0), ]
 bdInfResult = bdResult[[2]][which(bdResult[[2]][,1] != 0.0), ]
-scResult = load(paste0(scInfDir, "all_params_", case, ".Rdat"))
-scResult = get(scResult)
-scInfResult = scResult[[2]][which(scResult[[2]][,1] != 0.0), ]
-simParams = as.numeric(scResult[[1]])
+bdInfResult = bdInfResult[which(bdInfResult$expMean == expMean), ]
+
+
+scbResult = load(paste0(scInfDir_back, "all_params_", case, ".Rdat"))
+scbResult = get(scbResult)
+scInfbResult = scbResult[[2]][which(scbResult[[2]][,1] != 0.0), ]
+scInfbResult = scInfbResult[which(scInfbResult$expMean == 1.0), ]
+
+scfResult = load(paste0(scInfDir_forward, "all_params_", case, ".Rdat"))
+scfResult = get(scfResult)
+scInffResult = scfResult[[2]][which(scfResult[[2]][,1] != 0.0), ]
+scInffResult = scInffResult[which(scInffResult$expMean == 1.0), ]
+
+simParams = as.numeric(scfResult[[1]])
 rm(result_51)
 ```
 
 ```{r}
-b_melted  = melt(bdInfResult[,c(7,10,31)], id.vars="seed" )
-b_upper_melted = melt(bdInfResult[,c(9,12,31)], id.vars="seed" )
-b_lower_melted = melt(bdInfResult[,c(8,11,31)], id.vars="seed" )
+b_melted  = melt(bdInfResult[,c(7,10,28)], id.vars="seed" )
+b_upper_melted = melt(bdInfResult[,c(9,12,28)], id.vars="seed" )
+b_lower_melted = melt(bdInfResult[,c(8,11,28)], id.vars="seed" )
 colnames(b_upper_melted) <- c("seed", "var_upper", "val_upper")
 colnames(b_lower_melted) <- c("seed", "var_lower", "val_lower")
 
-s_melted  = melt(scInfResult[,c(28,31,34)], id.vars="seed" )
-s_upper_melted = melt(scInfResult[,c(30,33,34)], id.vars="seed" )
-s_lower_melted = melt(scInfResult[,c(29,32,34)], id.vars="seed" )
-colnames(s_upper_melted) <- c("seed", "var_upper", "val_upper")
-colnames(s_lower_melted) <- c("seed", "var_lower", "val_lower")
+sb_melted  = melt(scInfbResult[,c(28,31,34)], id.vars="seed" )
+sb_upper_melted = melt(scInfbResult[,c(30,33,34)], id.vars="seed" )
+sb_lower_melted = melt(scInfbResult[,c(29,32,34)], id.vars="seed" )
+colnames(sb_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(sb_lower_melted) <- c("seed", "var_lower", "val_lower")
+
+sf_melted  = melt(scInffResult[,c(28,31,34)], id.vars="seed" )
+sf_upper_melted = melt(scInffResult[,c(30,33,34)], id.vars="seed" )
+sf_lower_melted = melt(scInffResult[,c(29,32,34)], id.vars="seed" )
+colnames(sf_upper_melted) <- c("seed", "var_upper", "val_upper")
+colnames(sf_lower_melted) <- c("seed", "var_lower", "val_lower")
 
 bdat = cbind(b_melted, b_lower_melted[, c(2,3)], b_upper_melted[, c(2,3)])
 bdat$variable = as.character(bdat$variable)
 bdat$var_lower = as.character(bdat$var_lower)
 bdat$var_upper = as.character(bdat$var_upper)
 
-bdat$Model = "BD"
+bdat$Model = "Birth-death"
 
-sdat = cbind(s_melted, s_lower_melted[, c(2,3)], s_upper_melted[, c(2,3)])
-sdat$Model = "SC"
+sbdat = cbind(sb_melted, sb_lower_melted[, c(2,3)], sb_upper_melted[, c(2,3)])
+sbdat$Model = "Coalescent-b"
 
-dat = rbind(sdat, bdat)
+sfdat = cbind(sf_melted, sf_lower_melted[, c(2,3)], sf_upper_melted[, c(2,3)])
+sfdat$Model = "Coalescent-f"
+
+dat = rbind(bdat, sbdat, sfdat)
 dat$seed = as.numeric(dat$seed)
 ```
 
 ```{r}
 # order by mr01
-subdat = dat[which(dat$variable == "mr01" & dat$Model == "SC"), ]
-subdat = subdat[order(subdat$value), ]
-subdat$orderedSeed = 1:nrow(subdat)
-
-mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
-dat$orderedSeed = NA
-for (i in 1:length(dat$orderedSeed)){
-  if (length(mapping[which(mapping$seed == dat[i, "seed"]), "ind"]) == 0){next()}
-  dat[i, "orderedSeed"] = mapping[which(mapping$seed == dat[i, "seed"]), "ind"]
-}
-dat = dat[order(dat$orderedSeed),]
+# subdat = dat[which(dat$variable == "mr01" & dat$Model == "SC"), ]
+# subdat = subdat[order(subdat$value), ]
+# subdat$orderedSeed = 1:nrow(subdat)
+# 
+# mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
+# dat$orderedSeed = NA
+# for (i in 1:length(dat$orderedSeed)){
+#   if (length(mapping[which(mapping$seed == dat[i, "seed"]), "ind"]) == 0){next()}
+#   dat[i, "orderedSeed"] = mapping[which(mapping$seed == dat[i, "seed"]), "ind"]
+# }
+# dat = dat[order(dat$orderedSeed),]
 ```
 
 
@@ -104,25 +127,41 @@ N0_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n =
 N1_samples = replicate(oneOnX_sample_generator(lbound = 0.01, ubound = 100), n = 100000)
 mr10_samples = q01_samples * N0_samples /N1_samples # forward migration
 
-med_sc = as.numeric(median(mr10_samples, na.rm = TRUE))
-lower_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[1]])
-upper_sc = as.numeric(hdi(mr10_samples,credMass = 0.95)[[2]])
+med_scb = as.numeric(median(mr10_samples, na.rm = TRUE))
+lower_scb = as.numeric(hdi(mr10_samples,credMass = 0.95)[[1]])
+upper_scb = as.numeric(hdi(mr10_samples,credMass = 0.95)[[2]])
+
+med_scf  = as.numeric(median(q01_samples, na.rm = TRUE))
+lower_scf = as.numeric(hdi(q01_samples,credMass = 0.95)[[1]])
+upper_scf = as.numeric(hdi(q01_samples,credMass = 0.95)[[2]])
 
 med_bd  = as.numeric(median(q01_samples, na.rm = TRUE))
 lower_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[1]])
 upper_bd = as.numeric(hdi(q01_samples,credMass = 0.95)[[2]])
 
-dat[nrow(dat) + 1, ] = c(110, "mr10", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, "BD_Prior",110)
-dat[nrow(dat) + 1, ] = c(115, "mr10", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, "SC_Prior", 115)
-dat[nrow(dat) + 1, ] = c(110, "mr01", med_bd, "mr01_lower", lower_bd, "mr01_upper", upper_bd, "BD_Prior",110)
-dat[nrow(dat) + 1, ] = c(115, "mr01", med_bd, "mr01_lower", lower_bd, "mr01_upper", upper_bd, "SC_Prior", 115)
+dat[nrow(dat) + 1, ] = c(110, "mr10", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, "Birth-death prior")
 
+dat[nrow(dat) + 1, ] = c(112, "mr10", med_scf, "mr10_lower", lower_scf, "mr10_upper", upper_scf, "Coalescent-f prior")
+
+dat[nrow(dat) + 1, ] = c(114, "mr10", med_scb, "mr10_lower", lower_scb, "mr10_upper", upper_scb, "Coalescent-b prior")
+
+dat[nrow(dat) + 1, ] = c(110, "mr01", med_bd, "mr01_lower", lower_bd, "mr01_upper", upper_bd, "Birth-death prior")
+
+dat[nrow(dat) + 1, ] = c(112, "mr01", med_scf, "mr01_lower", lower_scf, "mr01_upper", upper_scf, "Coalescent-f prior")
+
+dat[nrow(dat) + 1, ] = c(114, "mr01", med_scb, "mr01_lower", lower_scb, "mr01_upper", upper_scb, "Coalescent-b prior")
+
+
+dat$Model = factor(dat$Model, levels = c("Birth-death", "Birth-death prior", 
+                                         "Coalescent-f", "Coalescent-f prior",
+                                         "Coalescent-b", "Coalescent-b prior"))
 ```
 
 ```{r}
 library(latex2exp)
+cols =lacroix_palette("Lemon", n = 6)[c(1,1, 5,5, 6,6)]
 
-p <- ggplot(subset(dat, variable %in% "mr01"), aes(x=as.numeric(orderedSeed), y=log(as.numeric(value)), col = Model ))+
+p <- ggplot(subset(dat, variable %in% "mr01"), aes(x=as.numeric(seed), y=log(as.numeric(value)), col = Model ))+
   geom_point() + 
   # geom_crossbar(aes(ymin=log(as.numeric(val_lower)), ymax=log(as.numeric(val_upper)), fill = Model),
   #               alpha=0.1, width=0.2) +
@@ -130,17 +169,14 @@ p <- ggplot(subset(dat, variable %in% "mr01"), aes(x=as.numeric(orderedSeed), y=
   
   geom_hline(yintercept = log(1.0), col="black") +
   xlab("Simulation Number") + 
-  ylab(TeX("Log 95% HPD interval of $m_{rb}$")) +  scale_color_manual(values = c(
-    '#de77ae',
-    '#8e0152',
-    '#7fbc41',
-    '#276419')) +
+  ylab(TeX("Log 95% HPD interval of $m_{rb}$")) +  
+  scale_color_manual(values = cols) +
   theme_bw(base_family = "Times") + 
-  theme(panel.grid.major.x  = element_blank(), panel.grid.minor.x = element_blank(), legend.title = element_blank())
+  theme(panel.grid.major.x  = element_blank(), panel.grid.minor.x = element_blank(), legend.title = element_blank(), legend.position = "top")
 
-
+p
 #+ scale_color_manual( values = viridis(2))
-pdf(file = paste0(picPath, "case51_inferredmr01_forwardExp.pdf"))
+pdf(file = paste0(picPath, "fig_s4.pdf"))
 print(p)
 dev.off()
 p
@@ -148,56 +184,33 @@ p
 
 
 ```{r}
-# remove prior rows to make ordering possible
-dat = dat[1:(nrow(dat)-4),]
-
-
-# order by mr01
-subdat = dat[which(dat$variable == "mr10" & dat$Model == "SC"), ]
-subdat = subdat[order(subdat$value), ]
-subdat$orderedSeed = 1:nrow(subdat)
-
-mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
-dat$orderedSeed = -1
-for (i in 1:length(dat$orderedSeed)){
-  dat[i, "orderedSeed"] = mapping[which(mapping$seed == dat[i, "seed"]), "ind"]
-}
-dat = dat[order(dat$orderedSeed),]
-
-# readd prior rows
-dat[nrow(dat) + 1, ] = c(110, "mr10", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, "BD_Prior",110)
-dat[nrow(dat) + 1, ] = c(115, "mr10", med_sc, "mr10_lower", lower_sc, "mr10_upper", upper_sc, "SC_Prior", 115)
-dat[nrow(dat) + 1, ] = c(110, "mr01", med_bd, "mr01_lower", lower_bd, "mr01_upper", upper_bd, "BD_Prior",110)
-dat[nrow(dat) + 1, ] = c(115, "mr01", med_sc, "mr01_lower", lower_sc, "mr01_upper", upper_sc, "SC_Prior", 115)
+# # remove prior rows to make ordering possible
+# dat = dat[1:(nrow(dat)-4),]
+# 
+# 
+# # order by mr01
+# subdat = dat[which(dat$variable == "mr10" & dat$Model == "SC"), ]
+# subdat = subdat[order(subdat$value), ]
+# subdat$orderedSeed = 1:nrow(subdat)
+# 
+# mapping = data.frame(ind=subdat$orderedSeed, seed=subdat$seed)
+# dat$orderedSeed = -1
+# for (i in 1:length(dat$orderedSeed)){
+#   dat[i, "orderedSeed"] = mapping[which(mapping$seed == dat[i, "seed"]), "ind"]
+# }
+# dat = dat[order(dat$orderedSeed),]
+# 
+# # readd prior rows
+# dat[nrow(dat) + 1, ] = c(110, "mr10", med_bd, "mr10_lower", lower_bd, "mr10_upper", upper_bd, "BD_Prior",110)
+# dat[nrow(dat) + 1, ] = c(115, "mr10", med_sc, "mr10_lower", lower_sc, "mr10_upper", upper_sc, "SC_Prior", 115)
+# dat[nrow(dat) + 1, ] = c(110, "mr01", med_bd, "mr01_lower", lower_bd, "mr01_upper", upper_bd, "BD_Prior",110)
+# dat[nrow(dat) + 1, ] = c(115, "mr01", med_sc, "mr01_lower", lower_sc, "mr01_upper", upper_sc, "SC_Prior", 115)
 
 ```
 
 
 
 
-```{r}
-p <- ggplot(subset(dat, variable %in% "mr10"), aes(x=as.numeric(seed), y=log(as.numeric(value)), col = Model, ))+ 
-  geom_point() + geom_errorbar(aes(ymin=log(as.numeric(val_lower)), ymax=log(as.numeric(val_upper))), alpha=0.4) +
-  geom_hline(yintercept = log(1.0), col="black") +
-  xlab("Simulation Number") + 
-  ylab("Log migration rate mr10") +   scale_color_manual(values = c(
-    '#762a83',
-    '#af8dc3',
-    '#1b7837',
-    '#7fbf7b')) +
-  theme_minimal() 
-
-#+ scale_color_manual( values = viridis(2))
-pdf(file = paste0(picPath, "case51_inferredmr10_forwardExp.pdf"))
-print(p)
-dev.off()
-p
-```
-
-# Population size
-
-
-<!-- ```{r} -->
 <!-- b_melted  = melt(bdInfResult[,c(19,22,31)], id.vars="seed" ) -->
 <!-- b_upper_melted = melt(bdInfResult[,c(21,24,31)], id.vars="seed" ) -->
 <!-- b_lower_melted = melt(bdInfResult[,c(20,23,31)], id.vars="seed" ) -->
