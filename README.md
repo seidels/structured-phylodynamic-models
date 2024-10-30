@@ -2,6 +2,9 @@
 Code to reproduce the results of the paper "Estimating disease spread using structured coalescent and
 birth-death models: A quantitative comparison"
 
+bioRxiv: https://doi.org/10.1101/2020.11.30.403741
+Epidemics: https://doi.org/10.1016/j.epidem.2024.100795
+
 ## Step 1: Simulation
 
 Simulate the trees for the
